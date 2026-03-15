@@ -1,0 +1,356 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// =====================================================
+// ENUM TYPES
+// =====================================================
+
+enum UserRole {
+  SUPER_ADMIN @map("super_admin")
+  GYM_ADMIN   @map("gym_admin")
+  TRAINER     @map("trainer")
+  MEMBER      @map("member")
+}
+
+enum UserStatus {
+  ACTIVE    @map("active")
+  INACTIVE  @map("inactive")
+  SUSPENDED @map("suspended")
+}
+
+enum MembershipStatus {
+  ACTIVE    @map("active")
+  EXPIRED   @map("expired")
+  CANCELLED @map("cancelled")
+}
+
+enum PaymentStatus {
+  PENDING  @map("pending")
+  SUCCESS  @map("success")
+  FAILED   @map("failed")
+  REFUNDED @map("refunded")
+}
+
+enum PaymentMethod {
+  CASH   @map("cash")
+  CARD   @map("card")
+  UPI    @map("upi")
+  ONLINE @map("online")
+}
+
+enum EquipmentStatus {
+  ACTIVE      @map("active")
+  MAINTENANCE @map("maintenance")
+  RETIRED     @map("retired")
+}
+
+enum NotificationType {
+  SYSTEM    @map("system")
+  PROMOTION @map("promotion")
+  REMINDER  @map("reminder")
+}
+
+enum DeviceType {
+  ANDROID @map("android")
+  IOS     @map("ios")
+}
+
+// =====================================================
+// SUBSCRIPTION PLANS
+// =====================================================
+
+model SubscriptionPlan {
+  id           String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name         String   @db.VarChar(100)
+  maxBranches  Int      @map("max_branches")
+  maxTrainers  Int      @map("max_trainers")
+  maxMembers   Int      @map("max_members")
+  price        Decimal  @db.Decimal(10, 2)
+  billingCycle String   @map("billing_cycle") @db.VarChar(20)
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  gyms Gym[]
+
+  @@map("subscription_plans")
+}
+
+// =====================================================
+// GYMS
+// =====================================================
+
+model Gym {
+  id                 String     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name               String     @db.VarChar(255)
+  ownerName          String     @map("owner_name") @db.VarChar(255)
+  email              String     @unique @db.VarChar(255)
+  phone              String     @db.VarChar(20)
+  subscriptionPlanId String     @map("subscription_plan_id") @db.Uuid
+  status             UserStatus @default(ACTIVE)
+  createdAt          DateTime   @default(now()) @map("created_at") @db.Timestamptz
+
+  subscriptionPlan SubscriptionPlan @relation(fields: [subscriptionPlanId], references: [id])
+  branches         Branch[]
+  users            User[]
+  membershipPlans  MembershipPlan[]
+  featureFlags     FeatureFlag[]
+
+  @@map("gyms")
+}
+
+// =====================================================
+// BRANCHES
+// =====================================================
+
+model Branch {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  gymId     String   @map("gym_id") @db.Uuid
+  name      String   @db.VarChar(255)
+  address   String   @db.Text
+  city      String   @db.VarChar(100)
+  state     String?  @db.VarChar(100)
+  country   String?  @db.VarChar(100)
+  phone     String?  @db.VarChar(20)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  gym        Gym          @relation(fields: [gymId], references: [id], onDelete: Cascade)
+  users      User[]
+  attendance Attendance[]
+
+  @@map("branches")
+}
+
+// =====================================================
+// USERS
+// =====================================================
+
+model User {
+  id            String     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  gymId         String?    @map("gym_id") @db.Uuid
+  branchId      String?    @map("branch_id") @db.Uuid
+  email         String     @unique @db.VarChar(255)
+  phone         String?    @db.VarChar(20)
+  passwordHash  String     @map("password_hash") @db.Text
+  role          UserRole
+  status        UserStatus @default(ACTIVE)
+  emailVerified Boolean    @default(false) @map("email_verified")
+  createdAt     DateTime   @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt     DateTime?  @map("updated_at") @db.Timestamptz
+
+  gym           Gym?           @relation(fields: [gymId], references: [id], onDelete: Cascade)
+  branch        Branch?        @relation(fields: [branchId], references: [id], onDelete: SetNull)
+  profile       UserProfile?
+  trainer       Trainer?
+  member        Member?
+  notifications Notification[]
+  deviceTokens  DeviceToken[]
+  auditLogs     AuditLog[]
+
+  @@index([gymId], name: "idx_users_gym")
+  @@index([branchId], name: "idx_users_branch")
+  @@map("users")
+}
+
+// =====================================================
+// USER PROFILES
+// =====================================================
+
+model UserProfile {
+  id               String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId           String    @unique @map("user_id") @db.Uuid
+  firstName        String    @map("first_name") @db.VarChar(100)
+  lastName         String?   @map("last_name") @db.VarChar(100)
+  gender           String?   @db.VarChar(20)
+  dateOfBirth      DateTime? @map("date_of_birth") @db.Date
+  profileImage     String?   @map("profile_image") @db.Text
+  emergencyContact String?   @map("emergency_contact") @db.VarChar(20)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("user_profiles")
+}
+
+// =====================================================
+// TRAINERS
+// =====================================================
+
+model Trainer {
+  id              String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId          String  @unique @map("user_id") @db.Uuid
+  specialization  String? @db.VarChar(255)
+  experienceYears Int?    @map("experience_years")
+  certification   String? @db.Text
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("trainers")
+}
+
+// =====================================================
+// MEMBERS
+// =====================================================
+
+model Member {
+  id           String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId       String   @unique @map("user_id") @db.Uuid
+  joinDate     DateTime @default(now()) @map("join_date") @db.Timestamptz
+  medicalNotes String?  @map("medical_notes") @db.Text
+
+  user        User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  memberships MemberMembership[]
+  payments    Payment[]
+  attendance  Attendance[]
+
+  @@index([userId], name: "idx_members_user")
+  @@map("members")
+}
+
+// =====================================================
+// MEMBERSHIP PLANS
+// =====================================================
+
+model MembershipPlan {
+  id           String     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  gymId        String     @map("gym_id") @db.Uuid
+  name         String     @db.VarChar(100)
+  durationDays Int        @map("duration_days")
+  price        Decimal    @db.Decimal(10, 2)
+  description  String?    @db.Text
+  status       UserStatus @default(ACTIVE)
+
+  gym         Gym                @relation(fields: [gymId], references: [id], onDelete: Cascade)
+  memberships MemberMembership[]
+
+  @@map("membership_plans")
+}
+
+// =====================================================
+// MEMBER MEMBERSHIPS
+// =====================================================
+
+model MemberMembership {
+  id               String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  memberId         String           @map("member_id") @db.Uuid
+  membershipPlanId String           @map("membership_plan_id") @db.Uuid
+  startDate        DateTime         @map("start_date") @db.Date
+  endDate          DateTime         @map("end_date") @db.Date
+  status           MembershipStatus @default(ACTIVE)
+
+  member         Member         @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  membershipPlan MembershipPlan @relation(fields: [membershipPlanId], references: [id])
+  payments       Payment[]
+
+  @@map("member_memberships")
+}
+
+// =====================================================
+// PAYMENTS
+// =====================================================
+
+model Payment {
+  id            String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  memberId      String        @map("member_id") @db.Uuid
+  membershipId  String        @map("membership_id") @db.Uuid
+  amount        Decimal       @db.Decimal(10, 2)
+  paymentMethod PaymentMethod @map("payment_method")
+  transactionId String?       @map("transaction_id") @db.VarChar(255)
+  paymentStatus PaymentStatus @default(PENDING) @map("payment_status")
+  paidAt        DateTime?     @map("paid_at") @db.Timestamptz
+
+  member     Member           @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  membership MemberMembership @relation(fields: [membershipId], references: [id], onDelete: Cascade)
+
+  @@index([memberId], name: "idx_payments_member")
+  @@map("payments")
+}
+
+// =====================================================
+// ATTENDANCE
+// =====================================================
+
+model Attendance {
+  id       String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  memberId String    @map("member_id") @db.Uuid
+  branchId String    @map("branch_id") @db.Uuid
+  checkIn  DateTime  @map("check_in") @db.Timestamptz
+  checkOut DateTime? @map("check_out") @db.Timestamptz
+
+  member Member @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  branch Branch @relation(fields: [branchId], references: [id], onDelete: Cascade)
+
+  @@index([memberId], name: "idx_attendance_member")
+  @@map("attendance")
+}
+
+// =====================================================
+// NOTIFICATIONS
+// =====================================================
+
+model Notification {
+  id               String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId           String            @map("user_id") @db.Uuid
+  title            String            @db.VarChar(255)
+  message          String            @db.Text
+  notificationType NotificationType? @map("notification_type")
+  isRead           Boolean           @default(false) @map("is_read")
+  createdAt        DateTime          @default(now()) @map("created_at") @db.Timestamptz
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId], name: "idx_notifications_user")
+  @@map("notifications")
+}
+
+// =====================================================
+// DEVICE TOKENS
+// =====================================================
+
+model DeviceToken {
+  id         String     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId     String     @map("user_id") @db.Uuid
+  deviceType DeviceType @map("device_type")
+  token      String     @db.Text
+  createdAt  DateTime   @default(now()) @map("created_at") @db.Timestamptz
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("device_tokens")
+}
+
+// =====================================================
+// AUDIT LOGS
+// =====================================================
+
+model AuditLog {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId    String?  @map("user_id") @db.Uuid
+  action    String?  @db.VarChar(255)
+  entity    String?  @db.VarChar(255)
+  entityId  String?  @map("entity_id") @db.Uuid
+  metadata  Json?    @db.JsonB
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  user User? @relation(fields: [userId], references: [id])
+
+  @@map("audit_logs")
+}
+
+// =====================================================
+// FEATURE FLAGS
+// =====================================================
+
+model FeatureFlag {
+  id          String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  gymId       String  @map("gym_id") @db.Uuid
+  featureName String  @map("feature_name") @db.VarChar(255)
+  enabled     Boolean @default(false)
+
+  gym Gym @relation(fields: [gymId], references: [id], onDelete: Cascade)
+
+  @@map("feature_flags")
+}
