@@ -1,3 +1,31 @@
+/**
+ * @openapi
+ * /api/auth/signup:
+ *   post:
+ *     summary: Create a new user
+ *     description: Registers a new user with a specific role (SUPER_ADMIN, GYM_ADMIN, etc.).
+ *     tags: [Auth]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [email, password, role, firstName]
+ *             properties:
+ *               email: { type: string }
+ *               password: { type: string }
+ *               role: { type: string, enum: [SUPER_ADMIN, GYM_ADMIN, TRAINER, MEMBER] }
+ *               firstName: { type: string }
+ *               lastName: { type: string }
+ *               phone: { type: string }
+ *               gymId: { type: string, format: uuid }
+ *     responses:
+ *       201:
+ *         description: User created successfully
+ *       400:
+ *         description: Validation error or user already exists
+ */
 import { NextRequest } from 'next/server';
 import { signup } from '@/api/controllers';
 import { SignupSchema } from '@/api/models';
