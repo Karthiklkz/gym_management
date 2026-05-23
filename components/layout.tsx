@@ -17,7 +17,7 @@ export default function DashboardLayout({
 
         <Navbar />
 
-        <div className="p-6 bg-gray-100 min-h-screen">
+        <div className="p-6 bg-[#020617] text-slate-100 min-h-screen">
 
           {children}
 
