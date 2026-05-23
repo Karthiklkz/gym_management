@@ -6,21 +6,28 @@ import bcrypt from 'bcryptjs';
 
 export const GET = withAuth(async (req: NextRequest, user: any) => {
   try {
-    const gymId = user.gymId;
-    if (!gymId) return sendResponse([]);
+     const gymId = user.gymId;
+     const isSuperAdmin = user.role === 'SUPER_ADMIN';
 
-    const trainers = await prisma.trainer.findMany({
-      where: {
-        user: { gymId }
-      },
-      include: {
-        user: {
-          include: {
-            profile: true
-          }
-        }
-      }
-    });
+     if (!gymId && !isSuperAdmin) return sendResponse([]);
+
+     const trainers = await prisma.trainer.findMany({
+       where: isSuperAdmin ? {} : {
+         user: { gymId }
+       },
+       include: {
+         user: {
+           include: {
+             profile: true,
+             gym: {
+               select: {
+                 name: true
+               }
+             }
+           }
+         }
+       }
+     });
 
     return sendResponse(trainers);
   } catch (error: any) {
@@ -30,12 +37,14 @@ export const GET = withAuth(async (req: NextRequest, user: any) => {
 
 export const POST = withAuth(async (req: NextRequest, user: any) => {
   try {
-    const gymId = user.gymId;
-    if (!gymId) {
-      throw new Error('Not authorized to add trainers (no gym association)');
+    const body = await req.json();
+    const isSuperAdmin = user.role === 'SUPER_ADMIN';
+    const targetGymId = isSuperAdmin ? body.gymId : user.gymId;
+
+    if (!targetGymId) {
+      return sendError('Gym association is required', 400);
     }
 
-    const body = await req.json();
     const { firstName, lastName, email, phone, specialization, experienceYears, certification } = body;
 
     const existingUser = await prisma.user.findUnique({ where: { email } });
@@ -45,14 +54,14 @@ export const POST = withAuth(async (req: NextRequest, user: any) => {
 
     const defaultPasswordHash = await bcrypt.hash('trainer123', 10);
 
-    const branch = await prisma.branch.findFirst({ where: { gymId } });
+    const branch = await prisma.branch.findFirst({ where: { gymId: targetGymId } });
     if (!branch) {
-      throw new Error('No branch found for your gym.');
+      throw new Error('No branch found for the selected gym.');
     }
 
     const newTrainer = await prisma.user.create({
       data: {
-        gymId,
+        gymId: targetGymId,
         branchId: branch.id,
         email,
         phone,

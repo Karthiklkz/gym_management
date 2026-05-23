@@ -4,16 +4,34 @@ import { useQuery } from "@tanstack/react-query";
 import { apiClient } from "@/utility/api/apiClient";
 import Card from "@/components/Card";
 import { useRouter } from "next/navigation";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 
 export default function Dashboard() {
   const router = useRouter();
+  const [displayName, setDisplayName] = useState("Admin");
+  const [role, setRole] = useState("");
 
-  // Auth Guard
+  // Auth Guard & Info Retrieval
   useEffect(() => {
     const token = localStorage.getItem("token");
     if (!token) {
       router.push("/login");
+      return;
+    }
+
+    const userStr = localStorage.getItem("user");
+    if (userStr) {
+      try {
+        const userObj = JSON.parse(userStr);
+        setRole(userObj.role || "");
+        
+        if (userObj.role === "SUPER_ADMIN") {
+          setDisplayName("Super Admin");
+        } else {
+          const name = `${userObj.profile?.firstName || ""} ${userObj.profile?.lastName || ""}`.trim();
+          setDisplayName(name || "Admin");
+        }
+      } catch (e) {}
     }
   }, [router]);
 
@@ -42,10 +60,12 @@ export default function Dashboard() {
     <div className="space-y-8">
       <div>
         <h1 className="text-3xl font-bold text-white tracking-tight">
-          Welcome back, Admin
+          Welcome back, {displayName}
         </h1>
         <p className="text-slate-400 mt-1">
-          Here is what is happening at your PeakPulse Elite Fitness today.
+          {role === "SUPER_ADMIN"
+            ? "Here is a global overview of your PeakPulse Gym Networks today."
+            : "Here is what is happening at your PeakPulse Elite Fitness today."}
         </p>
       </div>
 
@@ -54,24 +74,24 @@ export default function Dashboard() {
         <Card
           title="Total Members"
           value={statsLoading ? "..." : stats.totalMembers}
-          subtitle="Registered members"
+          subtitle={role === "SUPER_ADMIN" ? "Global members" : "Registered members"}
           trend={{ value: "+8% from last month", isPositive: true }}
         />
         <Card
-          title="Active Memberships"
+          title={role === "SUPER_ADMIN" ? "Gym Networks" : "Active Memberships"}
           value={statsLoading ? "..." : stats.activePlans}
-          subtitle="Currently active plans"
-          trend={{ value: "+5% new signups", isPositive: true }}
+          subtitle={role === "SUPER_ADMIN" ? "Registered gym accounts" : "Currently active plans"}
+          trend={role === "SUPER_ADMIN" ? undefined : { value: "+5% new signups", isPositive: true }}
         />
         <Card
           title="Trainers"
           value={statsLoading ? "..." : stats.totalTrainers}
-          subtitle="Certified fitness coaches"
+          subtitle={role === "SUPER_ADMIN" ? "Coaches globally" : "Certified fitness coaches"}
         />
         <Card
           title="Monthly Revenue"
           value={statsLoading ? "..." : `$${Number(stats.monthlyRevenue).toLocaleString()}`}
-          subtitle="Payments this month"
+          subtitle={role === "SUPER_ADMIN" ? "Global payments" : "Payments this month"}
           trend={{ value: "+12.5% increase", isPositive: true }}
         />
       </div>
@@ -103,10 +123,15 @@ export default function Dashboard() {
                       </p>
                     </div>
                   </div>
-                  <div className="text-right">
+                  <div className="text-right flex flex-col items-end">
                     <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
                       {member.memberships[0]?.membershipPlan?.name || "No Plan"}
                     </span>
+                    {role === "SUPER_ADMIN" && member.user?.gym?.name && (
+                      <span className="text-[10px] text-emerald-400/90 font-medium mt-1 uppercase tracking-wider">
+                        {member.user.gym.name}
+                      </span>
+                    )}
                     <p className="text-[10px] text-slate-500 mt-1">
                       Joined {new Date(member.joinDate).toLocaleDateString()}
                     </p>
@@ -123,10 +148,12 @@ export default function Dashboard() {
         <div className="bg-[#090D16] border border-slate-800 rounded-xl p-6 flex flex-col justify-between">
           <div>
             <h3 className="text-lg font-semibold text-white mb-4">
-              Quick Admin Actions
+              {role === "SUPER_ADMIN" ? "Quick Network Actions" : "Quick Admin Actions"}
             </h3>
             <p className="text-slate-400 text-sm mb-6">
-              Quickly perform standard administrative actions for your gym branch.
+              {role === "SUPER_ADMIN"
+                ? "Perform standard administrative actions globally across all networks."
+                : "Quickly perform standard administrative actions for your gym branch."}
             </p>
           </div>
 
@@ -141,14 +168,23 @@ export default function Dashboard() {
               onClick={() => router.push("/dashboard/trainers")}
               className="w-full bg-slate-800 hover:bg-slate-700 text-white font-semibold py-2.5 rounded-lg text-sm transition cursor-pointer text-center block"
             >
-              View Trainers
+              {role === "SUPER_ADMIN" ? "Manage Trainers" : "View Trainers"}
             </button>
-            <button
-              onClick={() => router.push("/dashboard/payments")}
-              className="w-full bg-slate-800 hover:bg-slate-700 text-white font-semibold py-2.5 rounded-lg text-sm transition cursor-pointer text-center block"
-            >
-              Billing & Payments
-            </button>
+            {role === "SUPER_ADMIN" ? (
+              <button
+                onClick={() => router.push("/dashboard/gyms")}
+                className="w-full bg-[#22C55E]/10 hover:bg-[#22C55E]/20 text-[#22C55E] border border-[#22C55E]/20 font-semibold py-2.5 rounded-lg text-sm transition cursor-pointer text-center block"
+              >
+                Manage Gym Networks
+              </button>
+            ) : (
+              <button
+                onClick={() => router.push("/dashboard/payments")}
+                className="w-full bg-slate-800 hover:bg-slate-700 text-white font-semibold py-2.5 rounded-lg text-sm transition cursor-pointer text-center block"
+              >
+                Billing & Payments
+              </button>
+            )}
           </div>
         </div>
       </div>

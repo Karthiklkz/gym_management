@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiClient } from "@/utility/api/apiClient";
 import Table from "@/components/Table";
@@ -10,6 +10,17 @@ export default function MembersPage() {
   const queryClient = useQueryClient();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [formError, setFormError] = useState("");
+  const [role, setRole] = useState<string>("");
+
+  useEffect(() => {
+    const userStr = localStorage.getItem("user");
+    if (userStr) {
+      try {
+        const userObj = JSON.parse(userStr);
+        setRole(userObj.role || "");
+      } catch (e) {}
+    }
+  }, []);
 
   const [form, setForm] = useState({
     firstName: "",
@@ -18,18 +29,27 @@ export default function MembersPage() {
     phone: "",
     medicalNotes: "",
     membershipPlanId: "",
+    gymId: "",
   });
 
-  // Fetch members
+  // Fetch members (uses dynamic get members endpoint)
   const { data: membersResponse, isLoading } = useQuery({
     queryKey: ["members"],
     queryFn: () => apiClient<any>("/api/members"),
   });
 
-  // Fetch plans for dropdown selection
+  // Fetch plans for dropdown selection (dynamically loads per gym for Super Admin)
   const { data: plansResponse } = useQuery({
-    queryKey: ["membershipPlans"],
-    queryFn: () => apiClient<any>("/api/membership-plans"),
+    queryKey: ["membershipPlans", form.gymId],
+    queryFn: () => apiClient<any>(form.gymId ? `/api/membership-plans?gymId=${form.gymId}` : "/api/membership-plans"),
+    enabled: role === "GYM_ADMIN" || (role === "SUPER_ADMIN" && !!form.gymId),
+  });
+
+  // Fetch registered gyms if current user is Super Admin
+  const { data: gymsResponse } = useQuery({
+    queryKey: ["superAdminGymsList"],
+    queryFn: () => apiClient<any>("/api/super-admin/gyms"),
+    enabled: role === "SUPER_ADMIN",
   });
 
   // Create member mutation
@@ -50,6 +70,7 @@ export default function MembersPage() {
         phone: "",
         medicalNotes: "",
         membershipPlanId: "",
+        gymId: "",
       });
       setFormError("");
     },
@@ -61,10 +82,18 @@ export default function MembersPage() {
   const handleInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>
   ) => {
-    setForm({
-      ...form,
-      [e.target.name]: e.target.value,
-    });
+    if (e.target.name === "gymId") {
+      setForm({
+        ...form,
+        gymId: e.target.value,
+        membershipPlanId: "", // reset plan when gym changes
+      });
+    } else {
+      setForm({
+        ...form,
+        [e.target.name]: e.target.value,
+      });
+    }
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -75,6 +104,7 @@ export default function MembersPage() {
 
   const members = membersResponse?.data || [];
   const plans = plansResponse?.data || [];
+  const gyms = gymsResponse?.data || [];
 
   // Table Columns definition
   const columns = [
@@ -93,6 +123,22 @@ export default function MembersPage() {
         </div>
       ),
     },
+  ];
+
+  // Insert Gym column for Super Admin
+  if (role === "SUPER_ADMIN") {
+    columns.push({
+      header: "Gym Network",
+      render: (row: any) => (
+        <span className="text-slate-300 font-semibold">
+          {row.user?.gym?.name || "N/A"}
+        </span>
+      ),
+    });
+  }
+
+  // Push remaining standard columns
+  columns.push(
     {
       header: "Email",
       render: (row: any) => <span>{row.user?.email}</span>,
@@ -123,8 +169,8 @@ export default function MembersPage() {
           </span>
         );
       },
-    },
-  ];
+    }
+  );
 
   return (
     <div className="space-y-6">
@@ -132,7 +178,9 @@ export default function MembersPage() {
         <div>
           <h1 className="text-2xl font-bold text-white tracking-tight">Members</h1>
           <p className="text-sm text-slate-400">
-            View, search, and register new members in your gym.
+            {role === "SUPER_ADMIN"
+              ? "View and register new gym members globally across all networks."
+              : "View, search, and register new members in your gym."}
           </p>
         </div>
         <button
@@ -152,7 +200,7 @@ export default function MembersPage() {
             data={members}
             searchPlaceholder="Search members by name or email..."
             searchKey={(row: any) =>
-              `${row.user?.profile?.firstName} ${row.user?.profile?.lastName} ${row.user?.email}`
+              `${row.user?.profile?.firstName} ${row.user?.profile?.lastName} ${row.user?.email} ${row.user?.gym?.name || ""}`
             }
           />
         )}
@@ -168,6 +216,29 @@ export default function MembersPage() {
           {formError && (
             <div className="bg-rose-500/10 border border-rose-500/30 text-rose-400 p-3 rounded-lg text-xs font-medium">
               {formError}
+            </div>
+          )}
+
+          {/* Super Admin Gym selection */}
+          {role === "SUPER_ADMIN" && (
+            <div>
+              <label className="block text-xs font-semibold text-slate-400 mb-1.5 uppercase">
+                Gym Network *
+              </label>
+              <select
+                name="gymId"
+                required
+                value={form.gymId}
+                onChange={handleInputChange}
+                className="w-full bg-[#0F172A] border border-slate-700 text-white px-3 py-2 rounded-lg text-sm focus:outline-none focus:border-[#22C55E]"
+              >
+                <option value="">Select a gym network</option>
+                {gyms.map((gym: any) => (
+                  <option key={gym.id} value={gym.id}>
+                    {gym.name}
+                  </option>
+                ))}
+              </select>
             </div>
           )}
 
@@ -233,11 +304,16 @@ export default function MembersPage() {
             <select
               name="membershipPlanId"
               required
+              disabled={role === "SUPER_ADMIN" && !form.gymId}
               value={form.membershipPlanId}
               onChange={handleInputChange}
-              className="w-full bg-[#0F172A] border border-slate-700 text-white px-3 py-2 rounded-lg text-sm focus:outline-none focus:border-[#22C55E]"
+              className="w-full bg-[#0F172A] border border-slate-700 text-white px-3 py-2 rounded-lg text-sm focus:outline-none focus:border-[#22C55E] disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              <option value="">Select a membership plan</option>
+              <option value="">
+                {role === "SUPER_ADMIN" && !form.gymId
+                  ? "Select a gym network first"
+                  : "Select a membership plan"}
+              </option>
               {plans.map((plan: any) => (
                 <option key={plan.id} value={plan.id}>
                   {plan.name} (${plan.price})

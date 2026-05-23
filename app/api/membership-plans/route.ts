@@ -5,11 +5,20 @@ import prisma from '@/api/db/client';
 
 export const GET = withAuth(async (req: NextRequest, user: any) => {
   try {
-    const gymId = user.gymId;
-    if (!gymId) return sendResponse([]);
+    const isSuperAdmin = user.role === 'SUPER_ADMIN';
+    let gymId = user.gymId;
+
+    if (isSuperAdmin) {
+      const urlGymId = req.nextUrl.searchParams.get('gymId');
+      if (urlGymId) {
+        gymId = urlGymId;
+      }
+    }
+
+    if (!gymId && !isSuperAdmin) return sendResponse([]);
 
     const plans = await prisma.membershipPlan.findMany({
-      where: { gymId, status: 'ACTIVE' }
+      where: gymId ? { gymId, status: 'ACTIVE' } : { status: 'ACTIVE' }
     });
 
     return sendResponse(plans);
