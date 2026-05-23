@@ -7,6 +7,44 @@ export const GET = withAuth(async (req: NextRequest, user: any) => {
   try {
     const gymId = user.gymId;
 
+    if (user.role === 'SUPER_ADMIN') {
+      // 1. Total Members globally
+      const totalMembers = await prisma.member.count();
+
+      // 2. Total Trainers globally
+      const totalTrainers = await prisma.trainer.count();
+
+      // 3. Total registered Gyms (shown in Active memberships place)
+      const activePlans = await prisma.gym.count();
+
+      // 4. Monthly Revenue globally (all successful payments)
+      const startOfMonth = new Date();
+      startOfMonth.setDate(1);
+      startOfMonth.setHours(0, 0, 0, 0);
+
+      const payments = await prisma.payment.findMany({
+        where: {
+          paymentStatus: 'SUCCESS',
+          paidAt: {
+            gte: startOfMonth
+          }
+        },
+        select: {
+          amount: true
+        }
+      });
+
+      const monthlyRevenue = payments.reduce((acc, curr) => acc + Number(curr.amount), 0);
+
+      return sendResponse({
+        totalMembers,
+        totalTrainers,
+        activePlans, // Total Gyms
+        monthlyRevenue,
+        isSuperAdmin: true,
+      });
+    }
+
     if (!gymId) {
       return sendResponse({
         totalMembers: 0,

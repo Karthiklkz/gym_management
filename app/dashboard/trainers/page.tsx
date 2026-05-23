@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiClient } from "@/utility/api/apiClient";
 import Table from "@/components/Table";
@@ -10,6 +10,17 @@ export default function TrainersPage() {
   const queryClient = useQueryClient();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [formError, setFormError] = useState("");
+  const [role, setRole] = useState<string>("");
+
+  useEffect(() => {
+    const userStr = localStorage.getItem("user");
+    if (userStr) {
+      try {
+        const userObj = JSON.parse(userStr);
+        setRole(userObj.role || "");
+      } catch (e) {}
+    }
+  }, []);
 
   const [form, setForm] = useState({
     firstName: "",
@@ -19,12 +30,20 @@ export default function TrainersPage() {
     specialization: "",
     experienceYears: "",
     certification: "",
+    gymId: "",
   });
 
   // Fetch trainers list
   const { data: trainersResponse, isLoading } = useQuery({
     queryKey: ["trainers"],
     queryFn: () => apiClient<any>("/api/trainers"),
+  });
+
+  // Fetch registered gyms if current user is Super Admin
+  const { data: gymsResponse } = useQuery({
+    queryKey: ["superAdminGymsList"],
+    queryFn: () => apiClient<any>("/api/super-admin/gyms"),
+    enabled: role === "SUPER_ADMIN",
   });
 
   // Create trainer mutation
@@ -46,6 +65,7 @@ export default function TrainersPage() {
         specialization: "",
         experienceYears: "",
         certification: "",
+        gymId: "",
       });
       setFormError("");
     },
@@ -55,7 +75,7 @@ export default function TrainersPage() {
   });
 
   const handleInputChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
   ) => {
     setForm({
       ...form,
@@ -70,6 +90,7 @@ export default function TrainersPage() {
   };
 
   const trainers = trainersResponse?.data || [];
+  const gyms = gymsResponse?.data || [];
 
   // Table columns definition
   const columns = [
@@ -88,6 +109,22 @@ export default function TrainersPage() {
         </div>
       ),
     },
+  ];
+
+  // Insert Gym column for Super Admin
+  if (role === "SUPER_ADMIN") {
+    columns.push({
+      header: "Gym Network",
+      render: (row: any) => (
+        <span className="text-slate-300 font-semibold">
+          {row.user?.gym?.name || "N/A"}
+        </span>
+      ),
+    });
+  }
+
+  // Add the remaining columns
+  columns.push(
     {
       header: "Email",
       render: (row: any) => <span>{row.user?.email}</span>,
@@ -119,8 +156,8 @@ export default function TrainersPage() {
           {row.certification || "None listed"}
         </span>
       ),
-    },
-  ];
+    }
+  );
 
   return (
     <div className="space-y-6">
@@ -128,7 +165,9 @@ export default function TrainersPage() {
         <div>
           <h1 className="text-2xl font-bold text-white tracking-tight">Trainers</h1>
           <p className="text-sm text-slate-400">
-            Manage your certified gym coaches and specializations.
+            {role === "SUPER_ADMIN"
+              ? "Manage gym coaches globally across all network gyms."
+              : "Manage your certified gym coaches and specializations."}
           </p>
         </div>
         <button
@@ -148,7 +187,7 @@ export default function TrainersPage() {
             data={trainers}
             searchPlaceholder="Search trainers by name, email, or specialization..."
             searchKey={(row: any) =>
-              `${row.user?.profile?.firstName} ${row.user?.profile?.lastName} ${row.user?.email} ${row.specialization}`
+              `${row.user?.profile?.firstName} ${row.user?.profile?.lastName} ${row.user?.email} ${row.specialization} ${row.user?.gym?.name || ""}`
             }
           />
         )}
@@ -164,6 +203,29 @@ export default function TrainersPage() {
           {formError && (
             <div className="bg-rose-500/10 border border-rose-500/30 text-rose-400 p-3 rounded-lg text-xs font-medium">
               {formError}
+            </div>
+          )}
+
+          {/* Super Admin Gym selection */}
+          {role === "SUPER_ADMIN" && (
+            <div>
+              <label className="block text-xs font-semibold text-slate-400 mb-1.5 uppercase">
+                Gym Network *
+              </label>
+              <select
+                name="gymId"
+                required
+                value={form.gymId}
+                onChange={handleInputChange}
+                className="w-full bg-[#0F172A] border border-slate-700 text-white px-3 py-2 rounded-lg text-sm focus:outline-none focus:border-[#22C55E]"
+              >
+                <option value="">Select a gym network</option>
+                {gyms.map((gym: any) => (
+                  <option key={gym.id} value={gym.id}>
+                    {gym.name}
+                  </option>
+                ))}
+              </select>
             </div>
           )}
 

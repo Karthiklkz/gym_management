@@ -2,18 +2,61 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useEffect, useState } from "react";
 
 export default function Sidebar() {
   const pathname = usePathname();
+  const [role, setRole] = useState<string>("");
 
-  const menuItems = [
-    { name: "Dashboard", href: "/dashboard" },
-    { name: "Members", href: "/dashboard/members" },
-    { name: "Trainers", href: "/dashboard/trainers" },
-    { name: "Payments", href: "/dashboard/payments" },
-    { name: "Classes", href: "/dashboard/classes" },
-    { name: "Equipment", href: "/dashboard/equipment" },
-  ];
+  useEffect(() => {
+    const userStr = localStorage.getItem("user");
+    if (userStr) {
+      try {
+        const userObj = JSON.parse(userStr);
+        setRole(userObj.role || "");
+      } catch (e) {
+        // Fallback
+      }
+    }
+  }, []);
+
+  let menuItems = [];
+
+  if (role === "SUPER_ADMIN") {
+    menuItems = [
+      { name: "Dashboard", href: "/dashboard" },
+      { name: "Gyms", href: "/dashboard/gyms" },
+      { name: "Members", href: "/dashboard/members" },
+      { name: "Trainers", href: "/dashboard/trainers" },
+    ];
+  } else if (role === "GYM_ADMIN") {
+    menuItems = [
+      { name: "Dashboard", href: "/dashboard" },
+      { name: "Members", href: "/dashboard/members" },
+      { name: "Trainers", href: "/dashboard/trainers" },
+      { name: "Payments", href: "/dashboard/payments" },
+      { name: "Classes", href: "/dashboard/classes" },
+      { name: "Equipment", href: "/dashboard/equipment" },
+    ];
+  } else if (role === "TRAINER") {
+    menuItems = [
+      { name: "Dashboard", href: "/dashboard" },
+      { name: "Classes", href: "/dashboard/classes" },
+      { name: "Members", href: "/dashboard/members" },
+    ];
+  } else if (role === "MEMBER") {
+    menuItems = [
+      { name: "Dashboard", href: "/dashboard" },
+      { name: "Payments", href: "/dashboard/payments" },
+      { name: "Classes", href: "/dashboard/classes" },
+    ];
+  } else {
+    // Default fallback
+    menuItems = [
+      { name: "Dashboard", href: "/dashboard" },
+    ];
+  }
+
 
   return (
     <div className="w-64 h-screen bg-[#090D16] border-r border-slate-800 text-slate-300 p-6 flex flex-col justify-between">

@@ -7,16 +7,23 @@ import bcrypt from 'bcryptjs';
 export const GET = withAuth(async (req: NextRequest, user: any) => {
   try {
     const gymId = user.gymId;
-    if (!gymId) return sendResponse([]);
+    const isSuperAdmin = user.role === 'SUPER_ADMIN';
+
+    if (!gymId && !isSuperAdmin) return sendResponse([]);
 
     const members = await prisma.member.findMany({
-      where: {
+      where: isSuperAdmin ? {} : {
         user: { gymId }
       },
       include: {
         user: {
           include: {
-            profile: true
+            profile: true,
+            gym: {
+              select: {
+                name: true
+              }
+            }
           }
         },
         memberships: {
@@ -38,12 +45,14 @@ export const GET = withAuth(async (req: NextRequest, user: any) => {
 
 export const POST = withAuth(async (req: NextRequest, user: any) => {
   try {
-    const gymId = user.gymId;
-    if (!gymId) {
-      throw new Error('Not authorized to add members (no gym association)');
+    const body = await req.json();
+    const isSuperAdmin = user.role === 'SUPER_ADMIN';
+    const targetGymId = isSuperAdmin ? body.gymId : user.gymId;
+
+    if (!targetGymId) {
+      return sendError('Gym association is required', 400);
     }
 
-    const body = await req.json();
     const { firstName, lastName, email, phone, medicalNotes, membershipPlanId } = body;
 
     // Check if email already exists
@@ -55,16 +64,16 @@ export const POST = withAuth(async (req: NextRequest, user: any) => {
     const defaultPasswordHash = await bcrypt.hash('member123', 10);
 
     // Get gym's branch
-    const branch = await prisma.branch.findFirst({ where: { gymId } });
+    const branch = await prisma.branch.findFirst({ where: { gymId: targetGymId } });
     if (!branch) {
-      throw new Error('No branch found for your gym. Please seed the database.');
+      throw new Error('No branch found for the selected gym.');
     }
 
     const newMember = await prisma.$transaction(async (tx) => {
       // 1. Create User
       const newUser = await tx.user.create({
         data: {
-          gymId,
+          gymId: targetGymId,
           branchId: branch.id,
           email,
           phone,
