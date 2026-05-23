@@ -108,6 +108,7 @@ model Gym {
   subscriptionPlanId String     @map("subscription_plan_id") @db.Uuid
   status             UserStatus @default(ACTIVE)
   createdAt          DateTime   @default(now()) @map("created_at") @db.Timestamptz
+  createdBy          String?    @map("created_by") @db.Uuid
 
   subscriptionPlan SubscriptionPlan @relation(fields: [subscriptionPlanId], references: [id])
   branches         Branch[]
@@ -195,11 +196,13 @@ model UserProfile {
 // =====================================================
 
 model Trainer {
-  id              String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  userId          String  @unique @map("user_id") @db.Uuid
-  specialization  String? @db.VarChar(255)
-  experienceYears Int?    @map("experience_years")
-  certification   String? @db.Text
+  id              String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId          String   @unique @map("user_id") @db.Uuid
+  specialization  String?  @db.VarChar(255)
+  experienceYears Int?     @map("experience_years")
+  certification   String?  @db.Text
+  createdAt       DateTime @default(now()) @map("created_at") @db.Timestamptz
+  createdBy       String?  @map("created_by") @db.Uuid
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -215,6 +218,8 @@ model Member {
   userId       String   @unique @map("user_id") @db.Uuid
   joinDate     DateTime @default(now()) @map("join_date") @db.Timestamptz
   medicalNotes String?  @map("medical_notes") @db.Text
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz
+  createdBy    String?  @map("created_by") @db.Uuid
 
   user        User               @relation(fields: [userId], references: [id], onDelete: Cascade)
   memberships MemberMembership[]
