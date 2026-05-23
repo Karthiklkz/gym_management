@@ -23,14 +23,58 @@ export const signup = async (data: SignupInput) => {
 
   // Create user and associated profile in a transaction
   const user = await prisma.$transaction(async (tx) => {
+    let resolvedGymId = gymId;
+    let resolvedBranchId = branchId;
+
+    if (role === 'GYM_ADMIN' && !resolvedGymId) {
+      // Find or create a subscription plan
+      let plan = await tx.subscriptionPlan.findFirst();
+      if (!plan) {
+        plan = await tx.subscriptionPlan.create({
+          data: {
+            name: 'PeakPulse Basic Plan',
+            maxBranches: 3,
+            maxTrainers: 10,
+            maxMembers: 500,
+            price: 29.99,
+            billingCycle: 'monthly',
+          },
+        });
+      }
+
+      // Create a default gym
+      const newGym = await tx.gym.create({
+        data: {
+          name: `${firstName}'s Gym`,
+          ownerName: `${firstName} ${lastName || ''}`.trim(),
+          email: email,
+          phone: phone || '+1 555 123 4567',
+          subscriptionPlanId: plan.id,
+        },
+      });
+
+      // Create a default branch
+      const newBranch = await tx.branch.create({
+        data: {
+          gymId: newGym.id,
+          name: 'Main Branch',
+          address: 'Default Address',
+          city: 'Default City',
+        },
+      });
+
+      resolvedGymId = newGym.id;
+      resolvedBranchId = newBranch.id;
+    }
+
     const newUser = await tx.user.create({
       data: {
         email,
         passwordHash,
         role,
         phone,
-        gymId,
-        branchId,
+        gymId: resolvedGymId,
+        branchId: resolvedBranchId,
         profile: {
           create: {
             firstName,
