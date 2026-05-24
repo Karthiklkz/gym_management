@@ -131,7 +131,7 @@ export const login = async (data: LoginInput) => {
 
   // Generate JWT
   const token = jwt.sign(
-    { userId: user.id, role: user.role, gymId: user.gymId },
+    { userId: user.id, role: user.role, gymId: user.gymId, branchId: user.branchId },
     config.jwtSecret,
     { expiresIn: '24h' }
   );
@@ -141,6 +141,8 @@ export const login = async (data: LoginInput) => {
       id: user.id,
       email: user.email,
       role: user.role,
+      gymId: user.gymId,
+      branchId: user.branchId,
       profile: user.profile,
     },
     token,
