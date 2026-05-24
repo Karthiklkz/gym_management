@@ -30,7 +30,7 @@ export const apiClient = async <T>(
   }
 
   if (!response.ok) {
-    throw new Error(data.message || "An error occurred during the request");
+    throw new Error(data.error || data.message || "An error occurred during the request");
   }
 
   return data;
