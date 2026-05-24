@@ -40,15 +40,19 @@ export default function Sidebar() {
     ];
   } else if (role === "TRAINER") {
     menuItems = [
-      { name: "Dashboard", href: "/dashboard" },
-      { name: "Classes", href: "/dashboard/classes" },
-      { name: "Members", href: "/dashboard/members" },
+      { name: "Dashboard", href: "/trainer" },
+      { name: "Members", href: "/trainer/members" },
+      { name: "Attendance", href: "/trainer/attendance" },
+      { name: "Notifications", href: "/trainer/notifications" },
+      { name: "Profile", href: "/trainer/profile" },
     ];
   } else if (role === "MEMBER") {
     menuItems = [
-      { name: "Dashboard", href: "/dashboard" },
-      { name: "Payments", href: "/dashboard/payments" },
-      { name: "Classes", href: "/dashboard/classes" },
+      { name: "Dashboard", href: "/member" },
+      { name: "Membership", href: "/member/membership" },
+      { name: "Attendance", href: "/member/attendance" },
+      { name: "Notifications", href: "/member/notifications" },
+      { name: "Profile", href: "/member/profile" },
     ];
   } else {
     // Default fallback
