@@ -1,12 +1,27 @@
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { apiClient } from "@/utility/api/apiClient";
 import Card from "@/components/Card";
 import { useRouter } from "next/navigation";
 
 export default function TrainerDashboard() {
   const router = useRouter();
+
+  // Fetch self attendance status
+  const { data: selfAttendanceResponse, refetch: refetchSelfAttendance } = useQuery({
+    queryKey: ["trainerSelfAttendance"],
+    queryFn: () => apiClient<any>("/api/trainer/self-attendance"),
+  });
+
+  const selfAttendance = selfAttendanceResponse?.data || { checkedIn: false };
+
+  const toggleSelfAttendanceMutation = useMutation({
+    mutationFn: () => apiClient("/api/trainer/self-attendance", { method: "POST" }),
+    onSuccess: () => {
+      refetchSelfAttendance();
+    }
+  });
 
   // Fetch Trainer Dashboard Stats
   const { data: dashboardResponse, isLoading } = useQuery({
@@ -156,6 +171,20 @@ export default function TrainerDashboard() {
           <div className="bg-[#090D16] border border-slate-800 rounded-xl p-6">
             <h3 className="text-lg font-semibold text-white mb-4">Quick Coach Actions</h3>
             <div className="space-y-3">
+              {/* Shift Attendance Toggle */}
+              <button
+                onClick={() => toggleSelfAttendanceMutation.mutate()}
+                disabled={toggleSelfAttendanceMutation.isPending}
+                className={`w-full py-2.5 rounded-lg text-xs font-black uppercase tracking-wider transition duration-300 border flex items-center justify-center gap-2 cursor-pointer ${
+                  selfAttendance.checkedIn
+                    ? "bg-rose-500/15 hover:bg-rose-500/20 border-rose-500/20 text-rose-400"
+                    : "bg-emerald-500/15 hover:bg-emerald-500/20 border-emerald-500/20 text-emerald-400"
+                }`}
+              >
+                <span className={`h-2.5 w-2.5 rounded-full ${selfAttendance.checkedIn ? "bg-rose-500 animate-pulse" : "bg-emerald-500"}`} />
+                {selfAttendance.checkedIn ? "🔴 Active Shift: Clock Out" : "🟢 Off Duty: Clock In Shift"}
+              </button>
+
               <button
                 onClick={() => router.push("/trainer/members")}
                 className="w-full bg-[#22C55E] hover:bg-[#22C55E]/90 text-black font-bold py-2.5 rounded-lg text-sm transition cursor-pointer text-center block shadow-sm shadow-emerald-500/5"

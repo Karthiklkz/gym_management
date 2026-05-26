@@ -108,7 +108,7 @@ export default function PaymentsPage() {
     {
       header: "Amount Paid",
       render: (row: any) => (
-        <span className="font-bold text-[#22C55E]">${Number(row.amount).toFixed(2)}</span>
+        <span className="font-bold text-[#22C55E]">₹{Number(row.amount).toFixed(2)}</span>
       ),
     },
     {
@@ -223,7 +223,7 @@ export default function PaymentsPage() {
               <option value="">Keep current active membership</option>
               {plans.map((plan: any) => (
                 <option key={plan.id} value={plan.id}>
-                  {plan.name} (${plan.price})
+                  {plan.name} (₹{plan.price})
                 </option>
               ))}
             </select>
@@ -231,7 +231,7 @@ export default function PaymentsPage() {
 
           <div>
             <label className="block text-xs font-semibold text-slate-400 mb-1.5 uppercase">
-              Transaction Amount ($) *
+              Transaction Amount (₹) *
             </label>
             <input
               type="number"

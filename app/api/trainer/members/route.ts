@@ -97,6 +97,17 @@ export const GET = withRole(['TRAINER'], async (req: NextRequest, user: any) => 
               endDate: 'desc'
             },
             take: 1
+          },
+          payments: {
+            select: {
+              id: true,
+              paymentStatus: true,
+              paidAt: true
+            },
+            orderBy: {
+              paidAt: 'desc'
+            },
+            take: 1
           }
         },
         orderBy: {

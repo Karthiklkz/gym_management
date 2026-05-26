@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import Sidebar from "@/components/Sidebar";
 import Navbar from "@/components/Navbar";
 
@@ -11,6 +11,7 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   const router = useRouter();
+  const pathname = usePathname();
   const [authorized, setAuthorized] = useState(false);
 
   useEffect(() => {
@@ -25,11 +26,17 @@ export default function DashboardLayout({
     try {
       const userObj = JSON.parse(userStr);
       if (userObj.role === "MEMBER") {
-        router.push("/member");
-        return;
+        if (!pathname.startsWith("/member")) {
+          router.push("/member");
+          return;
+        }
+        setAuthorized(true);
       } else if (userObj.role === "TRAINER") {
-        router.push("/trainer");
-        return;
+        if (!pathname.startsWith("/trainer")) {
+          router.push("/trainer");
+          return;
+        }
+        setAuthorized(true);
       } else if (userObj.role === "GYM_ADMIN" || userObj.role === "SUPER_ADMIN") {
         setAuthorized(true);
       } else {
@@ -38,7 +45,7 @@ export default function DashboardLayout({
     } catch (e) {
       router.push("/login");
     }
-  }, [router]);
+  }, [router, pathname]);
 
   if (!authorized) {
     return (

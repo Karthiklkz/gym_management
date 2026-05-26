@@ -156,6 +156,26 @@ export default function TrainersPage() {
           {row.certification || "None listed"}
         </span>
       ),
+    },
+    {
+      header: "Presence Month-Wise",
+      render: (row: any) => {
+        const presence = row.monthlyPresence || {};
+        const months = Object.keys(presence);
+        if (months.length === 0) {
+          return <span className="text-slate-500 text-xs italic">No check-ins yet</span>;
+        }
+        return (
+          <div className="flex flex-col gap-1 text-[11px] min-w-[130px]">
+            {months.map((m) => (
+              <div key={m} className="flex justify-between items-center bg-[#0F172A] px-2 py-0.5 rounded border border-slate-800/80">
+                <span className="text-slate-400 font-semibold">{m}:</span>
+                <span className="text-[#22C55E] font-bold">{presence[m]} Days</span>
+              </div>
+            ))}
+          </div>
+        );
+      }
     }
   );
 

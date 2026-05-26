@@ -26,7 +26,15 @@ export default function MemberDashboard() {
     checkInStatus: 'NOT_CHECKED_IN',
     todayAttendanceDetail: null,
     recentAttendance: [],
-    unreadNotificationCount: 0
+    unreadNotificationCount: 0,
+    attendanceStreaks: null
+  };
+
+  const streaks = responseData.attendanceStreaks || {
+    currentStreak: 0,
+    maxStreak: 0,
+    totalVisits: 0,
+    weeklyChecklist: [false, false, false, false, false, false, false]
   };
 
   const notifications = (notificationsResponse?.data?.notifications || []).slice(0, 5);
@@ -93,8 +101,77 @@ export default function MemberDashboard() {
 
       {/* Main Widgets layout */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Left column - Recent Workout History */}
+        {/* Left column - Recent Workout History & Streaks */}
         <div className="lg:col-span-2 space-y-6">
+          
+          {/* Consistency & Streaks Widget */}
+          <div className="bg-[#090D16] border border-slate-800 rounded-xl p-6 shadow-md space-y-5">
+            <div className="flex justify-between items-center border-b border-slate-800 pb-3">
+              <div>
+                <h3 className="text-lg font-semibold text-white">Fitness Consistency & Streaks</h3>
+                <p className="text-xs text-slate-400 mt-0.5">Stay regular, build momentum, and keep the fire burning!</p>
+              </div>
+              <div className="flex items-center gap-1.5 bg-[#22C55E]/10 border border-[#22C55E]/20 text-[#22C55E] px-2.5 py-1 rounded-full text-xs font-bold uppercase tracking-wider">
+                🔥 Active Streak
+              </div>
+            </div>
+
+            {/* Streak & Trophy Metrics */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div className="bg-[#050811]/60 border border-slate-850 p-4 rounded-xl flex items-center gap-4">
+                <div className="h-12 w-12 rounded-xl bg-orange-500/10 border border-orange-500/20 flex items-center justify-center text-2xl animate-pulse">
+                  🔥
+                </div>
+                <div>
+                  <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider block">Current Streak</span>
+                  <span className="text-xl font-extrabold text-orange-400">{streaks.currentStreak} Days</span>
+                </div>
+              </div>
+
+              <div className="bg-[#050811]/60 border border-slate-850 p-4 rounded-xl flex items-center gap-4">
+                <div className="h-12 w-12 rounded-xl bg-yellow-500/10 border border-yellow-500/20 flex items-center justify-center text-2xl">
+                  🏆
+                </div>
+                <div>
+                  <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider block">Personal Best</span>
+                  <span className="text-xl font-extrabold text-yellow-400">{streaks.maxStreak} Days</span>
+                </div>
+              </div>
+
+              <div className="bg-[#050811]/60 border border-slate-850 p-4 rounded-xl flex items-center gap-4">
+                <div className="h-12 w-12 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-2xl">
+                  💪
+                </div>
+                <div>
+                  <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider block">Total Visits</span>
+                  <span className="text-xl font-extrabold text-emerald-400">{streaks.totalVisits} Workouts</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Weekly Checklist View */}
+            <div className="bg-[#050811]/30 border border-slate-850/80 p-4 rounded-xl space-y-3">
+              <h4 className="text-xs font-bold text-slate-400 uppercase tracking-widest">Weekly Consistency Tracker</h4>
+              <div className="grid grid-cols-7 gap-2">
+                {["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map((dayName, idx) => {
+                  const visited = streaks.weeklyChecklist[idx];
+                  return (
+                    <div key={dayName} className="flex flex-col items-center gap-1.5">
+                      <div className={`h-9 w-9 rounded-full flex items-center justify-center text-sm font-bold transition-all duration-300 shadow-md ${
+                        visited 
+                          ? "bg-[#22C55E] text-black shadow-[#22C55E]/15 border border-[#22C55E]/30" 
+                          : "bg-slate-900 border border-slate-800 text-slate-500"
+                      }`}>
+                        {visited ? "✓" : dayName.charAt(0)}
+                      </div>
+                      <span className="text-[10px] font-bold text-slate-400">{dayName}</span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+
           <div className="bg-[#090D16] border border-slate-800 rounded-xl p-6 shadow-md">
             <div className="flex justify-between items-center mb-4">
               <h3 className="text-lg font-semibold text-white">

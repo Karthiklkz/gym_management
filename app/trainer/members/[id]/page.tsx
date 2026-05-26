@@ -1,12 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import React, { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiClient } from "@/utility/api/apiClient";
 import Modal from "@/components/Modal";
 
-export default function TrainerMemberDetailPage({ params }: { params: { id: string } }) {
-  const { id } = params;
+export default function TrainerMemberDetailPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = React.use(params);
   const queryClient = useQueryClient();
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [formError, setFormError] = useState("");
@@ -181,7 +181,7 @@ export default function TrainerMemberDetailPage({ params }: { params: { id: stri
                 <div className="border-t border-slate-850 pt-3 space-y-2 text-xs">
                   <div className="flex justify-between">
                     <span className="text-slate-500">Plan Rate</span>
-                    <span className="text-slate-300 font-semibold">${Number(activeMembership.membershipPlan?.price).toFixed(2)}</span>
+                    <span className="text-slate-300 font-semibold">₹{Number(activeMembership.membershipPlan?.price).toFixed(2)}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-slate-500">Start Date</span>

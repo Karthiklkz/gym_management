@@ -27,7 +27,14 @@ export default function LoginPage() {
             localStorage.setItem("token", res.data.token);
             localStorage.setItem("user", JSON.stringify(res.data.user));
           }
-          router.push("/dashboard");
+          const userObj = res?.data?.user;
+          if (userObj?.role === "MEMBER") {
+            router.push("/member");
+          } else if (userObj?.role === "TRAINER") {
+            router.push("/trainer");
+          } else {
+            router.push("/dashboard");
+          }
         },
         onError: (err: any) => {
           setErrorDisplay(err.message || "Invalid login credentials");

@@ -30,6 +30,11 @@ export const GET = withAuth(async (req: NextRequest, user: any) => {
           include: {
             membershipPlan: true
           }
+        },
+        payments: {
+          orderBy: {
+            paidAt: 'desc'
+          }
         }
       },
       orderBy: {

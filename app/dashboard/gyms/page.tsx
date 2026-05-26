@@ -409,7 +409,7 @@ export default function GymsPage() {
                 <option value="">Select a subscription plan</option>
                 {plans.map((plan: any) => (
                   <option key={plan.id} value={plan.id}>
-                    {plan.name} (${plan.price}/mo - Max Branches: {plan.maxBranches}, Trainers: {plan.maxTrainers}, Members: {plan.maxMembers})
+                    {plan.name} (₹{plan.price}/mo - Max Branches: {plan.maxBranches}, Trainers: {plan.maxTrainers}, Members: {plan.maxMembers})
                   </option>
                 ))}
               </select>
@@ -596,7 +596,7 @@ export default function GymsPage() {
               >
                 {plans.map((plan: any) => (
                   <option key={plan.id} value={plan.id}>
-                    {plan.name} (${plan.price}/mo)
+                    {plan.name} (₹{plan.price}/mo)
                   </option>
                 ))}
               </select>

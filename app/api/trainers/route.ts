@@ -29,7 +29,40 @@ export const GET = withAuth(async (req: NextRequest, user: any) => {
        }
      });
 
-    return sendResponse(trainers);
+     const trainersWithPresence = await Promise.all(trainers.map(async (trainer) => {
+       const logs = await prisma.auditLog.findMany({
+         where: {
+           userId: trainer.userId,
+           action: 'TRAINER_CHECK_IN'
+         },
+         select: {
+           createdAt: true
+         },
+         orderBy: {
+           createdAt: 'asc'
+         }
+       });
+
+       const monthlyPresence: Record<string, number> = {};
+       const uniqueDays = new Set<string>();
+
+       for (const log of logs) {
+         const date = new Date(log.createdAt);
+         const dayKey = date.toISOString().split('T')[0];
+         if (!uniqueDays.has(dayKey)) {
+           uniqueDays.add(dayKey);
+           const monthName = date.toLocaleString('default', { month: 'short', year: 'numeric' });
+           monthlyPresence[monthName] = (monthlyPresence[monthName] || 0) + 1;
+         }
+       }
+
+       return {
+         ...trainer,
+         monthlyPresence
+       };
+     }));
+
+     return sendResponse(trainersWithPresence);
   } catch (error: any) {
     return sendError(error);
   }
