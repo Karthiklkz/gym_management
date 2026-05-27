@@ -5,7 +5,7 @@ import prisma from '@/api/db/client';
 
 export const PATCH = withAuth(async (req: NextRequest, user: any, { params }: { params: { id: string } }) => {
   try {
-    const memberId = params.id;
+    const memberId = (await (params as any)).id;
     const body = await req.json();
     const { status, paymentStatus } = body;
 
