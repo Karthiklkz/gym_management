@@ -27,7 +27,7 @@ export default function DashboardPage() {
   
           <div className="bg-white p-6 rounded shadow">
             Monthly Revenue
-            <h2 className="text-2xl font-bold">$5000</h2>
+            <h2 className="text-2xl font-bold">₹5000</h2>
           </div>
   
         </div>
