@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { useLoginMutation } from "@/utility/api/auth";
@@ -11,8 +11,42 @@ export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [errorDisplay, setErrorDisplay] = useState("");
-  
+  const [isCheckingAuth, setIsCheckingAuth] = useState(true);
+
   const loginMutation = useLoginMutation();
+
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    const userStr = localStorage.getItem("user");
+
+    if (token && userStr) {
+      try {
+        const userObj = JSON.parse(userStr);
+        if (userObj.role === "MEMBER") {
+          router.push("/member");
+        } else if (userObj.role === "TRAINER") {
+          router.push("/trainer");
+        } else {
+          router.push("/dashboard");
+        }
+      } catch (e) {
+        setIsCheckingAuth(false);
+      }
+    } else {
+      setIsCheckingAuth(false);
+    }
+  }, [router]);
+
+  if (isCheckingAuth) {
+    return (
+      <div className="min-h-screen bg-[#020617] text-slate-100 flex flex-col items-center justify-center">
+        <div className="flex items-center gap-3 text-slate-400 text-sm font-medium">
+          <span className="h-5 w-5 border-2 border-[#22C55E] border-t-transparent rounded-full animate-spin" />
+          Checking authentication...
+        </div>
+      </div>
+    );
+  }
 
   const handleLogin = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
