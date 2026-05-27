@@ -1,6 +1,6 @@
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { apiClient } from "@/utility/api/apiClient";
 import Card from "@/components/Card";
 import { useRouter } from "next/navigation";
@@ -9,9 +9,16 @@ export default function MemberDashboard() {
   const router = useRouter();
 
   // Fetch Member Dashboard Stats
-  const { data: dashboardResponse, isLoading } = useQuery({
+  const { data: dashboardResponse, isLoading, refetch: refetchDashboard } = useQuery({
     queryKey: ["memberDashboardStats"],
     queryFn: () => apiClient<any>("/api/member/dashboard"),
+  });
+
+  const toggleSelfAttendanceMutation = useMutation({
+    mutationFn: () => apiClient("/api/member/attendance", { method: "POST" }),
+    onSuccess: () => {
+      refetchDashboard();
+    }
   });
 
   // Fetch Member Notifications (limit to 5)
@@ -298,6 +305,20 @@ export default function MemberDashboard() {
           <div className="bg-[#090D16] border border-slate-800 rounded-xl p-6 shadow-md">
             <h3 className="text-lg font-semibold text-white mb-4">Quick Shortcuts</h3>
             <div className="space-y-3">
+              {/* Member Self Check-In/Out Toggle */}
+              <button
+                onClick={() => toggleSelfAttendanceMutation.mutate()}
+                disabled={toggleSelfAttendanceMutation.isPending}
+                className={`w-full py-2.5 rounded-lg text-xs font-black uppercase tracking-wider transition duration-300 border flex items-center justify-center gap-2 cursor-pointer ${
+                  responseData.checkInStatus === 'CHECKED_IN'
+                    ? "bg-rose-500/15 hover:bg-rose-500/20 border-rose-500/20 text-rose-400"
+                    : "bg-emerald-500/15 hover:bg-emerald-500/20 border-emerald-500/20 text-emerald-400"
+                }`}
+              >
+                <span className={`h-2.5 w-2.5 rounded-full ${responseData.checkInStatus === 'CHECKED_IN' ? "bg-rose-500 animate-pulse" : "bg-emerald-500"}`} />
+                {responseData.checkInStatus === 'CHECKED_IN' ? "🔴 Workout Active: Check Out" : "🟢 Start Workout: Check In"}
+              </button>
+
               <button
                 onClick={() => router.push("/member/membership")}
                 className="w-full bg-[#22C55E] hover:bg-[#22C55E]/90 text-black font-bold py-2.5 rounded-lg text-sm transition cursor-pointer text-center block shadow-sm shadow-emerald-500/5"

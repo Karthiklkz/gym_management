@@ -7,7 +7,7 @@ import { success, serverError, forbidden, notifyNotFound, badRequest } from '@/a
 export const PUT = withRole(['TRAINER'], async (req: NextRequest, user: any, { params }: { params: { id: string } }) => {
   try {
     const { userId, gymId, branchId } = user;
-    const { id } = params;
+    const { id } = await (params as any);
 
     if (!gymId || !branchId) {
       return forbidden("Trainer is not assigned to a gym and branch");

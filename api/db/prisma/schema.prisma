@@ -76,6 +76,14 @@ enum DeviceType {
   @@map("device_type_enum")
 }
 
+enum ClassLevel {
+  BEGINNER     @map("beginner")
+  INTERMEDIATE @map("intermediate")
+  ADVANCED     @map("advanced")
+
+  @@map("class_level_enum")
+}
+
 // =====================================================
 // SUBSCRIPTION PLANS
 // =====================================================
@@ -115,6 +123,8 @@ model Gym {
   users            User[]
   membershipPlans  MembershipPlan[]
   featureFlags     FeatureFlag[]
+  classes          Class[]
+  equipment        Equipment[]
 
   @@map("gyms")
 }
@@ -137,6 +147,8 @@ model Branch {
   gym        Gym          @relation(fields: [gymId], references: [id], onDelete: Cascade)
   users      User[]
   attendance Attendance[]
+  classes    Class[]
+  equipment  Equipment[]
 
   @@map("branches")
 }
@@ -204,7 +216,8 @@ model Trainer {
   createdAt       DateTime @default(now()) @map("created_at") @db.Timestamptz
   createdBy       String?  @map("created_by") @db.Uuid
 
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  classes Class[]
 
   @@map("trainers")
 }
@@ -373,4 +386,48 @@ model FeatureFlag {
   gym Gym @relation(fields: [gymId], references: [id], onDelete: Cascade)
 
   @@map("feature_flags")
+}
+
+// =====================================================
+// GYM CLASSES
+// =====================================================
+
+model Class {
+  id              String     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  gymId           String     @map("gym_id") @db.Uuid
+  branchId        String?    @map("branch_id") @db.Uuid
+  trainerId       String?    @map("trainer_id") @db.Uuid
+  name            String     @db.VarChar(255)
+  startTime       String     @map("start_time") @db.VarChar(50)
+  endTime         String     @map("end_time") @db.VarChar(50)
+  currentCapacity Int        @default(0) @map("current_capacity")
+  maxCapacity     Int        @map("max_capacity")
+  level           ClassLevel @default(BEGINNER)
+  createdAt       DateTime   @default(now()) @map("created_at") @db.Timestamptz
+
+  gym     Gym      @relation(fields: [gymId], references: [id], onDelete: Cascade)
+  branch  Branch?  @relation(fields: [branchId], references: [id], onDelete: SetNull)
+  trainer Trainer? @relation(fields: [trainerId], references: [id], onDelete: SetNull)
+
+  @@map("classes")
+}
+
+// =====================================================
+// GYM EQUIPMENT
+// =====================================================
+
+model Equipment {
+  id        String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  gymId     String          @map("gym_id") @db.Uuid
+  branchId  String?         @map("branch_id") @db.Uuid
+  name      String          @db.VarChar(255)
+  category  String          @db.VarChar(100)
+  quantity  Int             @default(1)
+  status    EquipmentStatus @default(ACTIVE)
+  createdAt DateTime        @default(now()) @map("created_at") @db.Timestamptz
+
+  gym    Gym     @relation(fields: [gymId], references: [id], onDelete: Cascade)
+  branch Branch? @relation(fields: [branchId], references: [id], onDelete: SetNull)
+
+  @@map("equipment")
 }
