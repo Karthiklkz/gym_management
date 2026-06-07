@@ -188,6 +188,7 @@ export const GET = withRole(['MEMBER'], async (req: NextRequest, user: any) => {
     return success({
       profile: {
         userId: member.user.id,
+        memberId: member.memberId,
         email: member.user.email,
         phone: member.user.phone,
         firstName: member.user.profile?.firstName || '',

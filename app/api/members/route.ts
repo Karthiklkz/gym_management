@@ -58,7 +58,7 @@ export const POST = withAuth(async (req: NextRequest, user: any) => {
       return sendError('Gym association is required', 400);
     }
 
-    const { firstName, lastName, email, phone, medicalNotes, membershipPlanId } = body;
+    const { firstName, lastName, email, phone, medicalNotes, membershipPlanId, emergencyContact, classType } = body;
 
     // Check if email already exists
     const existingUser = await prisma.user.findUnique({ where: { email } });
@@ -89,11 +89,13 @@ export const POST = withAuth(async (req: NextRequest, user: any) => {
             create: {
               firstName,
               lastName,
+              emergencyContact
             }
           },
           member: {
             create: {
               medicalNotes,
+              classType
             }
           }
         },

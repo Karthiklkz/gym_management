@@ -137,3 +137,83 @@ export const PATCH = withAuth(async (req: NextRequest, user: any, { params }: { 
     return sendError(error);
   }
 });
+
+export const PUT = withAuth(async (req: NextRequest, user: any, { params }: { params: { id: string } }) => {
+  try {
+    const memberId = (await (params as any)).id;
+    const body = await req.json();
+    const { firstName, lastName, phone, emergencyContact, classType, medicalNotes } = body;
+
+    // Find Member
+    const member = await prisma.member.findUnique({
+      where: { id: memberId },
+      include: { user: true }
+    });
+
+    if (!member) {
+      return sendError('Member not found', 404);
+    }
+
+    // Auth check
+    if (user.role !== 'SUPER_ADMIN' && member.user.gymId !== user.gymId) {
+      return sendError('Access denied', 403);
+    }
+
+    await prisma.$transaction(async (tx) => {
+      // 1. Update User phone
+      if (phone !== undefined) {
+        await tx.user.update({
+          where: { id: member.userId },
+          data: { phone }
+        });
+      }
+
+      // 2. Update UserProfile
+      await tx.userProfile.update({
+        where: { userId: member.userId },
+        data: {
+          firstName,
+          lastName,
+          emergencyContact
+        }
+      });
+
+      // 3. Update Member details (medicalNotes and classType)
+      await tx.member.update({
+        where: { id: memberId },
+        data: {
+          medicalNotes,
+          classType
+        }
+      });
+    });
+
+    // Fetch updated member record to return
+    const updatedMember = await prisma.member.findUnique({
+      where: { id: memberId },
+      include: {
+        user: {
+          include: {
+            profile: true,
+            gym: {
+              select: { name: true }
+            }
+          }
+        },
+        memberships: {
+          include: {
+            membershipPlan: true
+          },
+          orderBy: { endDate: 'desc' }
+        },
+        payments: {
+          orderBy: { paidAt: 'desc' }
+        }
+      }
+    });
+
+    return sendResponse(updatedMember, 200, 'Member details updated successfully');
+  } catch (error: any) {
+    return sendError(error);
+  }
+});

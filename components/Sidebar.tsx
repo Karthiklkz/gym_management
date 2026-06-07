@@ -39,6 +39,7 @@ export default function Sidebar() {
       { name: "Classes", href: "/dashboard/classes" },
       { name: "Equipment", href: "/dashboard/equipment" },
       { name: "Attendance", href: "/dashboard/attendance" },
+      { name: "Gym Details", href: "/dashboard/gym-details" },
     ];
   } else if (role === "TRAINER") {
     menuItems = [
@@ -47,6 +48,7 @@ export default function Sidebar() {
       { name: "Attendance", href: "/trainer/attendance" },
       { name: "Notifications", href: "/trainer/notifications" },
       { name: "Profile", href: "/trainer/profile" },
+      { name: "Gym Details", href: "/trainer/gym-details" },
     ];
   } else if (role === "MEMBER") {
     menuItems = [

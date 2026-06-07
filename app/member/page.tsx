@@ -282,6 +282,12 @@ export default function MemberDashboard() {
                 </div>
 
                 <div className="border-t border-slate-850 pt-4 space-y-2.5 text-xs">
+                  {profile.memberId && (
+                    <div className="flex justify-between">
+                      <span className="text-slate-500 font-medium">Member ID</span>
+                      <span className="text-[#22C55E] font-bold font-mono">{profile.memberId}</span>
+                    </div>
+                  )}
                   <div className="flex justify-between">
                     <span className="text-slate-500 font-medium">Join Date</span>
                     <span className="text-slate-300 font-semibold">

@@ -231,6 +231,15 @@ export default function MemberProfilePage() {
               />
             </div>
 
+            {memberData?.memberId && (
+              <div className="pt-2 border-b border-slate-850 pb-2">
+                <span className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider">Member ID</span>
+                <span className="block text-[#22C55E] font-bold text-sm font-mono mt-1">
+                  {memberData.memberId}
+                </span>
+              </div>
+            )}
+
             <div className="pt-2">
               <span className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider">Join Date</span>
               <span className="block text-slate-400 font-semibold text-xs mt-1">

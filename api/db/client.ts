@@ -2,6 +2,21 @@ import 'dotenv/config';
 import { PrismaClient } from '@prisma/client';
 import { PrismaPg } from '@prisma/adapter-pg';
 import { Pool } from 'pg';
+import { syncDatabaseSchema } from './sync';
+
+// Run database schema synchronization once on startup
+let syncPromise: Promise<void> | null = null;
+const runSchemaSync = () => {
+  if (!syncPromise) {
+    syncPromise = syncDatabaseSchema().catch((err) => {
+      console.error('[DB Sync] Startup sync failed:', err);
+    });
+  }
+  return syncPromise;
+};
+
+// Start synchronization in background
+runSchemaSync();
 
 const prismaClientSingleton = () => {
   if (!process.env.DATABASE_URL) {

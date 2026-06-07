@@ -61,6 +61,37 @@ export default function Dashboard() {
 
   const recentMembers = (membersData?.data || []).slice(0, 5);
 
+  const getExpiringMembers = () => {
+    const normalizedRole = (role || "").toUpperCase();
+    if (normalizedRole !== "GYM_ADMIN" || !membersData?.data) return [];
+    
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    return membersData.data.filter((member: any) => {
+      if (!member.memberships || member.memberships.length === 0) return false;
+      
+      // Sort memberships to get the one with the latest endDate
+      const sorted = [...member.memberships].sort(
+        (a: any, b: any) => new Date(b.endDate).getTime() - new Date(a.endDate).getTime()
+      );
+      const latestMembership = sorted[0];
+      if (!latestMembership || !latestMembership.endDate) return false;
+      
+      const endDate = new Date(latestMembership.endDate);
+      endDate.setHours(0, 0, 0, 0);
+      
+      // Calculate days difference
+      const diffTime = endDate.getTime() - today.getTime();
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+      
+      // Show if it expires in the next 5 days, or has expired within the last 5 days
+      return diffDays >= -5 && diffDays <= 5;
+    });
+  };
+
+  const expiringMembers = getExpiringMembers();
+
   // Custom SVG Chart Layout Coordinates Calculations
   const history = stats.chartHistory || [];
   const maxRevenue = Math.max(...history.map((h: any) => h.revenue), 1000);
@@ -143,6 +174,54 @@ export default function Dashboard() {
           trend={{ value: "+12.5% increase", isPositive: true }}
         />
       </div>
+
+      {/* Expiring Memberships Alert Box */}
+      {(role || "").toUpperCase() === "GYM_ADMIN" && expiringMembers.length > 0 && (
+        <div className="bg-[#090D16] border border-amber-500/20 rounded-xl p-6 shadow-xl relative overflow-hidden">
+          <div className="absolute top-0 right-0 h-32 w-32 bg-amber-500/5 rounded-full blur-2xl pointer-events-none" />
+          <div className="flex items-center gap-3 mb-4">
+            <div className="h-9 w-9 rounded-lg bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-500">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+              </svg>
+            </div>
+            <div>
+              <h2 className="text-lg font-bold text-white tracking-tight">Expiring Memberships</h2>
+              <p className="text-xs text-slate-400">The following members have memberships expiring within the next 5 days.</p>
+            </div>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {expiringMembers.map((member: any) => {
+              const activeMembership = member.memberships?.find((m: any) => m.status === "ACTIVE") || member.memberships?.[0];
+              const daysLeft = Math.ceil((new Date(activeMembership.endDate).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24));
+              return (
+                <div key={member.id} className="bg-[#050811] border border-slate-800/80 rounded-lg p-4 flex items-center justify-between hover:border-amber-500/30 transition">
+                  <div className="space-y-1">
+                    <div className="font-semibold text-white text-sm">
+                      {member.user?.profile?.firstName} {member.user?.profile?.lastName || ""}
+                    </div>
+                    <div className="text-xs text-slate-500 font-mono">ID: {member.memberId || "N/A"}</div>
+                    <div className="text-[11px] text-slate-400">
+                      Plan: {activeMembership?.membershipPlan?.name || "N/A"}
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold ${daysLeft <= 1 ? 'bg-red-500/10 text-red-400 border border-red-500/20' : 'bg-amber-500/10 text-amber-400 border border-amber-500/20'}`}>
+                      {daysLeft <= 0 ? 'Expires Today' : `${daysLeft} days left`}
+                    </span>
+                    <button 
+                      onClick={() => router.push("/dashboard/members")}
+                      className="text-[11px] text-[#22C55E] hover:underline font-bold block mt-2 cursor-pointer text-right w-full"
+                    >
+                      Renew
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       {/* Business Performance Analytics Charts */}
       <div className="bg-[#090D16] border border-slate-800 rounded-xl p-6 shadow-xl space-y-6">

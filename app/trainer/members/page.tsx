@@ -51,6 +51,11 @@ export default function TrainerMembersPage() {
             <span className="font-semibold text-white">
               {row.user?.profile?.firstName} {row.user?.profile?.lastName || ""}
             </span>
+            {row.memberId && (
+              <span className="block text-[10px] font-mono text-[#22C55E] mt-0.5">
+                ID: {row.memberId}
+              </span>
+            )}
           </div>
         </div>
       ),
@@ -120,6 +125,11 @@ export default function TrainerMembersPage() {
             <span className="font-semibold text-white">
               {row.user?.profile?.firstName} {row.user?.profile?.lastName || ""}
             </span>
+            {row.memberId && (
+              <span className="block text-[10px] font-mono text-[#22C55E] mt-0.5">
+                ID: {row.memberId}
+              </span>
+            )}
           </div>
         </div>
       ),
@@ -175,6 +185,11 @@ export default function TrainerMembersPage() {
             <span className="font-semibold text-white">
               {row.user?.profile?.firstName} {row.user?.profile?.lastName || ""}
             </span>
+            {row.memberId && (
+              <span className="block text-[10px] font-mono text-[#22C55E] mt-0.5">
+                ID: {row.memberId}
+              </span>
+            )}
           </div>
         </div>
       ),
@@ -321,7 +336,7 @@ export default function TrainerMembersPage() {
             data={displayedData}
             searchPlaceholder="Refine list results..."
             searchKey={(row: any) =>
-              `${row.user?.profile?.firstName} ${row.user?.profile?.lastName} ${row.user?.email}`
+              `${row.user?.profile?.firstName} ${row.user?.profile?.lastName} ${row.user?.email} ${row.memberId || ""}`
             }
           />
         ) : (

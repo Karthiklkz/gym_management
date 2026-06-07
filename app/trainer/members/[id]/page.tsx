@@ -31,6 +31,7 @@ export default function TrainerMemberDetailPage({ params }: { params: Promise<{ 
     dateOfBirth: "",
     emergencyContact: "",
     profileImage: "",
+    classType: "",
   });
 
   // Edit Profile Mutation
@@ -59,6 +60,7 @@ export default function TrainerMemberDetailPage({ params }: { params: Promise<{ 
       dateOfBirth: profile.dateOfBirth ? new Date(profile.dateOfBirth).toISOString().split('T')[0] : "",
       emergencyContact: profile.emergencyContact || "",
       profileImage: profile.profileImage || "",
+      classType: memberData?.classType || "",
     });
     setFormError("");
     setIsEditOpen(true);
@@ -127,9 +129,20 @@ export default function TrainerMemberDetailPage({ params }: { params: Promise<{ 
               <span className="inline-flex px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 mt-2">
                 Member
               </span>
+              {memberData.memberId && (
+                <span className="block text-xs font-mono text-[#22C55E] mt-2">
+                  ID: {memberData.memberId}
+                </span>
+              )}
             </div>
 
             <div className="border-t border-slate-850 mt-6 pt-4 space-y-3.5 text-xs">
+              {memberData.memberId && (
+                <div className="flex justify-between">
+                  <span className="text-slate-500 font-medium">Member ID</span>
+                  <span className="text-[#22C55E] font-bold font-mono">{memberData.memberId}</span>
+                </div>
+              )}
               <div className="flex justify-between">
                 <span className="text-slate-500 font-medium">Email Address</span>
                 <span className="text-slate-300 font-semibold">{memberData.user?.email}</span>
@@ -151,6 +164,10 @@ export default function TrainerMemberDetailPage({ params }: { params: Promise<{ 
               <div className="flex justify-between">
                 <span className="text-slate-500 font-medium">Emergency Contact</span>
                 <span className="text-slate-300 font-semibold">{profile.emergencyContact || "N/A"}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-slate-500 font-medium">Class Type</span>
+                <span className="inline-flex px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-blue-500/10 text-blue-400 border border-blue-500/20">{memberData.classType || "Gym"}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-slate-500 font-medium">Registration Date</span>
@@ -332,17 +349,38 @@ export default function TrainerMemberDetailPage({ params }: { params: Promise<{ 
             </div>
           </div>
 
-          <div>
-            <label className="block text-xs font-semibold text-slate-400 mb-1.5 uppercase">
-              Emergency Contact Phone
-            </label>
-            <input
-              type="text"
-              name="emergencyContact"
-              value={form.emergencyContact}
-              onChange={handleInputChange}
-              className="w-full bg-[#0F172A] border border-slate-700 text-white px-3 py-2 rounded-lg text-sm focus:outline-none focus:border-[#22C55E]"
-            />
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs font-semibold text-slate-400 mb-1.5 uppercase">
+                Emergency Contact Phone
+              </label>
+              <input
+                type="text"
+                name="emergencyContact"
+                value={form.emergencyContact}
+                onChange={handleInputChange}
+                className="w-full bg-[#0F172A] border border-slate-700 text-white px-3 py-2 rounded-lg text-sm focus:outline-none focus:border-[#22C55E]"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-slate-400 mb-1.5 uppercase">
+                Class Type
+              </label>
+              <select
+                name="classType"
+                value={form.classType}
+                onChange={handleInputChange}
+                className="w-full bg-[#0F172A] border border-slate-700 text-white px-3 py-2 rounded-lg text-sm focus:outline-none focus:border-[#22C55E]"
+              >
+                <option value="">Select Class Type</option>
+                <option value="Gym">Gym</option>
+                <option value="Yoga">Yoga</option>
+                <option value="Zumba">Zumba</option>
+                <option value="CrossFit">CrossFit</option>
+                <option value="MMA/Boxing">MMA/Boxing</option>
+                <option value="Cardio">Cardio</option>
+              </select>
+            </div>
           </div>
 
           <div>

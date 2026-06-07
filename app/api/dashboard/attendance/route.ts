@@ -73,6 +73,7 @@ export const GET = withRole(['SUPER_ADMIN', 'GYM_ADMIN'], async (req: NextReques
       }
       return {
         id: record.id,
+        memberId: record.member.memberId,
         name: `${record.member.user.profile?.firstName} ${record.member.user.profile?.lastName || ""}`.trim(),
         email: record.member.user.email,
         branchName: record.branch.name,

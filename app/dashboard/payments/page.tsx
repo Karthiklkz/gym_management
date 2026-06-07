@@ -92,9 +92,16 @@ export default function PaymentsPage() {
     {
       header: "Member Name",
       render: (row: any) => (
-        <span className="font-semibold text-white">
-          {row.member?.user?.profile?.firstName} {row.member?.user?.profile?.lastName || ""}
-        </span>
+        <div>
+          <span className="font-semibold text-white block">
+            {row.member?.user?.profile?.firstName} {row.member?.user?.profile?.lastName || ""}
+          </span>
+          {row.member?.memberId && (
+            <span className="text-[10px] font-mono text-[#22C55E]">
+              ID: {row.member.memberId}
+            </span>
+          )}
+        </div>
       ),
     },
     {
@@ -171,7 +178,7 @@ export default function PaymentsPage() {
             data={payments}
             searchPlaceholder="Search payments by member name or transaction..."
             searchKey={(row: any) =>
-              `${row.member?.user?.profile?.firstName} ${row.member?.user?.profile?.lastName} ${row.transactionId}`
+              `${row.member?.user?.profile?.firstName} ${row.member?.user?.profile?.lastName} ${row.transactionId} ${row.member?.memberId || ""}`
             }
           />
         )}
@@ -204,7 +211,7 @@ export default function PaymentsPage() {
               <option value="">Choose a member</option>
               {members.map((m: any) => (
                 <option key={m.id} value={m.id}>
-                  {m.user?.profile?.firstName} {m.user?.profile?.lastName || ""} ({m.user?.email})
+                  {m.memberId ? `[${m.memberId}] ` : ""}{m.user?.profile?.firstName} {m.user?.profile?.lastName || ""} ({m.user?.email})
                 </option>
               ))}
             </select>

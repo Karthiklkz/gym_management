@@ -4,22 +4,23 @@ import prisma from '@/api/db/client';
 import { success, serverError, forbidden, notifyNotFound, badRequest } from '@/api/utils/response';
 
 // GET: View single branch member details (profile, memberships, and last 30 days attendance)
-export const GET = withRole(['TRAINER'], async (req: NextRequest, user: any, { params }: { params: { id: string } }) => {
+export const GET = withRole(['TRAINER', 'GYM_ADMIN'], async (req: NextRequest, user: any, { params }: { params: { id: string } }) => {
   try {
-    const { userId, gymId, branchId } = user;
+    const { userId, gymId, branchId, role } = user;
     const { id } = params;
 
-    if (!gymId || !branchId) {
-      return forbidden("Trainer is not assigned to a gym and branch");
+    const isGymAdmin = role === 'GYM_ADMIN';
+    if (!gymId || (!isGymAdmin && !branchId)) {
+      return forbidden("User is not properly assigned to a gym/branch");
     }
 
-    // Verify trainer is active
+    // Verify user is active
     const dbUser = await prisma.user.findUnique({
       where: { id: userId },
       select: { status: true }
     });
     if (!dbUser || dbUser.status !== 'ACTIVE') {
-      return forbidden("Trainer account is inactive");
+      return forbidden("Account is inactive");
     }
 
     // Fetch member user details and verify scoping
@@ -64,8 +65,8 @@ export const GET = withRole(['TRAINER'], async (req: NextRequest, user: any, { p
       }
     });
 
-    if (!member || member.user.gymId !== gymId || member.user.branchId !== branchId) {
-      return notifyNotFound("Member not found in your branch");
+    if (!member || member.user.gymId !== gymId || (!isGymAdmin && member.user.branchId !== branchId)) {
+      return notifyNotFound("Member not found in your scope");
     }
 
     // Fetch last 30 days attendance
@@ -93,23 +94,24 @@ export const GET = withRole(['TRAINER'], async (req: NextRequest, user: any, { p
   }
 });
 
-// PUT: Trainer updates basic member profile fields
-export const PUT = withRole(['TRAINER'], async (req: NextRequest, user: any, { params }: { params: { id: string } }) => {
+// PUT: Trainer/Gym Admin updates member profile fields
+export const PUT = withRole(['TRAINER', 'GYM_ADMIN'], async (req: NextRequest, user: any, { params }: { params: { id: string } }) => {
   try {
-    const { userId, gymId, branchId } = user;
+    const { userId, gymId, branchId, role } = user;
     const { id } = params;
 
-    if (!gymId || !branchId) {
-      return forbidden("Trainer is not assigned to a gym and branch");
+    const isGymAdmin = role === 'GYM_ADMIN';
+    if (!gymId || (!isGymAdmin && !branchId)) {
+      return forbidden("User is not properly assigned to a gym/branch");
     }
 
-    // Verify trainer is active
+    // Verify user is active
     const dbUser = await prisma.user.findUnique({
       where: { id: userId },
       select: { status: true }
     });
     if (!dbUser || dbUser.status !== 'ACTIVE') {
-      return forbidden("Trainer account is inactive");
+      return forbidden("Account is inactive");
     }
 
     // Fetch member and verify ownership
@@ -120,12 +122,12 @@ export const PUT = withRole(['TRAINER'], async (req: NextRequest, user: any, { p
       }
     });
 
-    if (!member || member.user.gymId !== gymId || member.user.branchId !== branchId) {
-      return notifyNotFound("Member not found in your branch");
+    if (!member || member.user.gymId !== gymId || (!isGymAdmin && member.user.branchId !== branchId)) {
+      return notifyNotFound("Member not found in your scope");
     }
 
     const body = await req.json();
-    const { firstName, lastName, gender, dateOfBirth, emergencyContact, profileImage } = body;
+    const { firstName, lastName, gender, dateOfBirth, emergencyContact, profileImage, classType } = body;
 
     if (!firstName) {
       return badRequest("First name is required");
@@ -134,7 +136,7 @@ export const PUT = withRole(['TRAINER'], async (req: NextRequest, user: any, { p
     // Update user profile in a transaction
     const updatedMember = await prisma.$transaction(async (tx) => {
       // Update UserProfile
-      const profile = await tx.userProfile.update({
+      await tx.userProfile.update({
         where: { userId: member.userId },
         data: {
           firstName,
@@ -146,6 +148,16 @@ export const PUT = withRole(['TRAINER'], async (req: NextRequest, user: any, { p
         }
       });
 
+      // Update Member classType
+      if (classType !== undefined) {
+        await tx.member.update({
+          where: { id },
+          data: {
+            classType
+          }
+        });
+      }
+
       // Write Audit Log
       await tx.auditLog.create({
         data: {
@@ -154,12 +166,23 @@ export const PUT = withRole(['TRAINER'], async (req: NextRequest, user: any, { p
           entity: 'Member',
           entityId: id,
           metadata: {
-            changes: { firstName, lastName, gender, dateOfBirth, emergencyContact, profileImage }
+            changes: { firstName, lastName, gender, dateOfBirth, emergencyContact, profileImage, classType }
           }
         }
       });
 
-      return profile;
+      // Fetch the updated member profile to return
+      const updated = await tx.member.findUnique({
+        where: { id },
+        include: {
+          user: {
+            include: {
+              profile: true
+            }
+          }
+        }
+      });
+      return updated;
     });
 
     return success(updatedMember, "Member profile updated successfully");

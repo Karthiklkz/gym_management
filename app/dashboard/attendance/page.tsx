@@ -69,6 +69,11 @@ export default function AdminAttendancePage() {
       render: (row: any) => (
         <div>
           <span className="font-semibold text-slate-100">{row.name}</span>
+          {row.memberId && (
+            <span className="inline-block ml-2 px-1.5 py-0.2 rounded text-[9px] font-mono font-bold bg-[#22C55E]/10 text-[#22C55E] border border-[#22C55E]/10">
+              {row.memberId}
+            </span>
+          )}
           <span className="block text-[10px] text-slate-500 font-mono mt-0.5">{row.email}</span>
         </div>
       )
@@ -310,7 +315,7 @@ export default function AdminAttendancePage() {
             columns={activeTab === "members" ? memberColumns : trainerColumns}
             data={activeTab === "members" ? membersList : trainersList}
             searchPlaceholder={activeTab === "members" ? "Search members by name or email..." : "Search trainers by name or email..."}
-            searchKey={(row: any) => `${row.name} ${row.email} ${row.branchName}`}
+            searchKey={(row: any) => `${row.name} ${row.email} ${row.branchName} ${row.memberId || ""}`}
           />
         )}
       </div>

@@ -40,10 +40,17 @@ export const GET = withRole(['TRAINER'], async (req: NextRequest, user: any) => 
     };
 
     if (search) {
-      where.user.OR = [
-        { email: { contains: search, mode: 'insensitive' } },
-        { profile: { firstName: { contains: search, mode: 'insensitive' } } },
-        { profile: { lastName: { contains: search, mode: 'insensitive' } } }
+      where.OR = [
+        { memberId: { contains: search, mode: 'insensitive' } },
+        {
+          user: {
+            OR: [
+              { email: { contains: search, mode: 'insensitive' } },
+              { profile: { firstName: { contains: search, mode: 'insensitive' } } },
+              { profile: { lastName: { contains: search, mode: 'insensitive' } } }
+            ]
+          }
+        }
       ];
     }
 
@@ -64,6 +71,8 @@ export const GET = withRole(['TRAINER'], async (req: NextRequest, user: any) => 
         select: {
           id: true,
           joinDate: true,
+          memberId: true,
+          classType: true,
           user: {
             select: {
               id: true,

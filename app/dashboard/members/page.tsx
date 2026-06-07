@@ -31,6 +31,21 @@ export default function MembersPage() {
     medicalNotes: "",
     membershipPlanId: "",
     gymId: "",
+    emergencyContact: "",
+    classType: "",
+  });
+
+  // Edit states
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [editFormError, setEditFormError] = useState("");
+  const [selectedMemberId, setSelectedMemberId] = useState<string>("");
+  const [editForm, setEditForm] = useState({
+    firstName: "",
+    lastName: "",
+    phone: "",
+    emergencyContact: "",
+    classType: "",
+    medicalNotes: "",
   });
 
   // Fetch members (uses dynamic get members endpoint)
@@ -72,6 +87,8 @@ export default function MembersPage() {
         medicalNotes: "",
         membershipPlanId: "",
         gymId: "",
+        emergencyContact: "",
+        classType: "",
       });
       setFormError("");
     },
@@ -88,6 +105,22 @@ export default function MembersPage() {
       }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["members"] });
+    },
+  });
+
+  const putMemberMutation = useMutation({
+    mutationFn: ({ memberId, data }: { memberId: string; data: any }) =>
+      apiClient(`/api/members/${memberId}`, {
+        method: "PUT",
+        body: JSON.stringify(data),
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["members"] });
+      setIsEditModalOpen(false);
+      setEditFormError("");
+    },
+    onError: (err: any) => {
+      setEditFormError(err.message || "Failed to update member");
     },
   });
 
@@ -114,6 +147,26 @@ export default function MembersPage() {
     createMemberMutation.mutate(form);
   };
 
+  const handleEditClick = (member: any) => {
+    setSelectedMemberId(member.id);
+    setEditForm({
+      firstName: member.user?.profile?.firstName || "",
+      lastName: member.user?.profile?.lastName || "",
+      phone: member.user?.phone || "",
+      emergencyContact: member.user?.profile?.emergencyContact || "",
+      classType: member.classType || "",
+      medicalNotes: member.medicalNotes || "",
+    });
+    setIsEditModalOpen(true);
+    setEditFormError("");
+  };
+
+  const handleEditSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    setEditFormError("");
+    putMemberMutation.mutate({ memberId: selectedMemberId, data: editForm });
+  };
+
   const members = membersResponse?.data || [];
   const plans = plansResponse?.data || [];
   const gyms = gymsResponse?.data || [];
@@ -131,6 +184,11 @@ export default function MembersPage() {
             <span className="font-semibold text-white">
               {row.user?.profile?.firstName} {row.user?.profile?.lastName || ""}
             </span>
+            {row.memberId && (
+              <span className="block text-[10px] font-mono text-[#22C55E] mt-0.5">
+                ID: {row.memberId}
+              </span>
+            )}
           </div>
         </div>
       ),
@@ -158,6 +216,14 @@ export default function MembersPage() {
       render: (row: any) => <span>{row.user?.phone || "N/A"}</span>,
     },
     {
+      header: "Class Type",
+      render: (row: any) => (
+        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-blue-500/10 text-blue-400 border border-blue-500/20">
+          {row.classType || "Gym"}
+        </span>
+      ),
+    },
+    {
       header: "Membership Plan",
       render: (row: any) => {
         const activeMembership = row.memberships?.[0];
@@ -179,6 +245,17 @@ export default function MembersPage() {
           </span>
         );
       },
+    },
+    {
+      header: "Actions",
+      render: (row: any) => (
+        <button
+          onClick={() => handleEditClick(row)}
+          className="px-2.5 py-1 text-xs font-bold rounded-lg border bg-[#22C55E]/10 text-[#22C55E] hover:bg-[#22C55E]/20 border-[#22C55E]/20 transition cursor-pointer"
+        >
+          Edit
+        </button>
+      ),
     }
   );
 
@@ -195,6 +272,11 @@ export default function MembersPage() {
             <span className="font-semibold text-white">
               {row.user?.profile?.firstName} {row.user?.profile?.lastName || ""}
             </span>
+            {row.memberId && (
+              <span className="block text-[10px] font-mono text-[#22C55E] mt-0.5">
+                ID: {row.memberId}
+              </span>
+            )}
           </div>
         </div>
       ),
@@ -250,6 +332,11 @@ export default function MembersPage() {
             <span className="font-semibold text-white">
               {row.user?.profile?.firstName} {row.user?.profile?.lastName || ""}
             </span>
+            {row.memberId && (
+              <span className="block text-[10px] font-mono text-[#22C55E] mt-0.5">
+                ID: {row.memberId}
+              </span>
+            )}
           </div>
         </div>
       ),
@@ -390,7 +477,7 @@ export default function MembersPage() {
             data={displayedData}
             searchPlaceholder="Search members by name or email..."
             searchKey={(row: any) =>
-              `${row.user?.profile?.firstName} ${row.user?.profile?.lastName} ${row.user?.email} ${row.user?.gym?.name || ""}`
+              `${row.user?.profile?.firstName} ${row.user?.profile?.lastName} ${row.user?.email} ${row.user?.gym?.name || ""} ${row.memberId || ""}`
             }
           />
         )}
@@ -512,6 +599,41 @@ export default function MembersPage() {
             </select>
           </div>
 
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs font-semibold text-slate-400 mb-1.5 uppercase">
+                Emergency Contact
+              </label>
+              <input
+                type="text"
+                name="emergencyContact"
+                value={form.emergencyContact}
+                onChange={handleInputChange}
+                className="w-full bg-[#0F172A] border border-slate-700 text-white px-3 py-2 rounded-lg text-sm focus:outline-none focus:border-[#22C55E]"
+                placeholder="e.g. +91 98765 43210"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-slate-400 mb-1.5 uppercase">
+                Class Type
+              </label>
+              <select
+                name="classType"
+                value={form.classType}
+                onChange={handleInputChange}
+                className="w-full bg-[#0F172A] border border-slate-700 text-white px-3 py-2 rounded-lg text-sm focus:outline-none focus:border-[#22C55E]"
+              >
+                <option value="">Select class type</option>
+                <option value="Gym">Gym</option>
+                <option value="Yoga">Yoga</option>
+                <option value="Zumba">Zumba</option>
+                <option value="CrossFit">CrossFit</option>
+                <option value="MMA/Boxing">MMA/Boxing</option>
+                <option value="Cardio">Cardio</option>
+              </select>
+            </div>
+          </div>
+
           <div>
             <label className="block text-xs font-semibold text-slate-400 mb-1.5 uppercase">
               Medical Notes
@@ -539,6 +661,126 @@ export default function MembersPage() {
               className="px-4 py-2 bg-[#22C55E] hover:bg-[#22C55E]/90 text-black font-semibold rounded-lg text-sm transition cursor-pointer disabled:opacity-50"
             >
               {createMemberMutation.isPending ? "Creating..." : "Save Member"}
+            </button>
+          </div>
+        </form>
+      </Modal>
+
+      {/* Edit Member Modal */}
+      <Modal
+        isOpen={isEditModalOpen}
+        onClose={() => setIsEditModalOpen(false)}
+        title="Edit Gym Member Profile"
+      >
+        <form onSubmit={handleEditSubmit} className="space-y-4">
+          {editFormError && (
+            <div className="bg-rose-500/10 border border-rose-500/30 text-rose-400 p-3 rounded-lg text-xs font-medium">
+              {editFormError}
+            </div>
+          )}
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs font-semibold text-slate-400 mb-1.5 uppercase">
+                First Name *
+              </label>
+              <input
+                type="text"
+                name="firstName"
+                required
+                value={editForm.firstName}
+                onChange={(e) => setEditForm({ ...editForm, firstName: e.target.value })}
+                className="w-full bg-[#0F172A] border border-slate-700 text-white px-3 py-2 rounded-lg text-sm focus:outline-none focus:border-[#22C55E]"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-slate-400 mb-1.5 uppercase">
+                Last Name
+              </label>
+              <input
+                type="text"
+                name="lastName"
+                value={editForm.lastName}
+                onChange={(e) => setEditForm({ ...editForm, lastName: e.target.value })}
+                className="w-full bg-[#0F172A] border border-slate-700 text-white px-3 py-2 rounded-lg text-sm focus:outline-none focus:border-[#22C55E]"
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs font-semibold text-slate-400 mb-1.5 uppercase">
+                Phone Number
+              </label>
+              <input
+                type="text"
+                name="phone"
+                value={editForm.phone}
+                onChange={(e) => setEditForm({ ...editForm, phone: e.target.value })}
+                className="w-full bg-[#0F172A] border border-slate-700 text-white px-3 py-2 rounded-lg text-sm focus:outline-none focus:border-[#22C55E]"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-slate-400 mb-1.5 uppercase">
+                Emergency Contact
+              </label>
+              <input
+                type="text"
+                name="emergencyContact"
+                value={editForm.emergencyContact}
+                onChange={(e) => setEditForm({ ...editForm, emergencyContact: e.target.value })}
+                className="w-full bg-[#0F172A] border border-slate-700 text-white px-3 py-2 rounded-lg text-sm focus:outline-none focus:border-[#22C55E]"
+              />
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-xs font-semibold text-slate-400 mb-1.5 uppercase">
+              Class Type
+            </label>
+            <select
+              name="classType"
+              value={editForm.classType}
+              onChange={(e) => setEditForm({ ...editForm, classType: e.target.value })}
+              className="w-full bg-[#0F172A] border border-slate-700 text-white px-3 py-2 rounded-lg text-sm focus:outline-none focus:border-[#22C55E]"
+            >
+              <option value="">Select class type</option>
+              <option value="Gym">Gym</option>
+              <option value="Yoga">Yoga</option>
+              <option value="Zumba">Zumba</option>
+              <option value="CrossFit">CrossFit</option>
+              <option value="MMA/Boxing">MMA/Boxing</option>
+              <option value="Cardio">Cardio</option>
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-xs font-semibold text-slate-400 mb-1.5 uppercase">
+              Medical Notes
+            </label>
+            <textarea
+              name="medicalNotes"
+              rows={3}
+              value={editForm.medicalNotes}
+              onChange={(e) => setEditForm({ ...editForm, medicalNotes: e.target.value })}
+              className="w-full bg-[#0F172A] border border-slate-700 text-white px-3 py-2 rounded-lg text-sm focus:outline-none focus:border-[#22C55E]"
+            />
+          </div>
+
+          <div className="flex gap-3 justify-end pt-2">
+            <button
+              type="button"
+              onClick={() => setIsEditModalOpen(false)}
+              className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-sm transition cursor-pointer"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={putMemberMutation.isPending}
+              className="px-4 py-2 bg-[#22C55E] hover:bg-[#22C55E]/90 text-black font-semibold rounded-lg text-sm transition cursor-pointer disabled:opacity-50"
+            >
+              {putMemberMutation.isPending ? "Saving..." : "Save Changes"}
             </button>
           </div>
         </form>

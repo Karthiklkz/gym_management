@@ -115,6 +115,10 @@ model Gym {
   phone              String     @db.VarChar(20)
   subscriptionPlanId String     @map("subscription_plan_id") @db.Uuid
   status             UserStatus @default(ACTIVE)
+  location           String?    @db.Text
+  address            String?    @db.Text
+  pincode            String?    @db.VarChar(20)
+  gst                String?    @db.VarChar(50)
   createdAt          DateTime   @default(now()) @map("created_at") @db.Timestamptz
   createdBy          String?    @map("created_by") @db.Uuid
 
@@ -229,8 +233,10 @@ model Trainer {
 model Member {
   id           String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   userId       String   @unique @map("user_id") @db.Uuid
+  memberId     String?  @unique @map("member_id") @db.VarChar(50)
   joinDate     DateTime @default(now()) @map("join_date") @db.Timestamptz
   medicalNotes String?  @map("medical_notes") @db.Text
+  classType    String?  @map("class_type") @db.VarChar(100)
   createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz
   createdBy    String?  @map("created_by") @db.Uuid
 

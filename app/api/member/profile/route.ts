@@ -39,7 +39,8 @@ export const GET = withRole(['MEMBER'], async (req: NextRequest, user: any) => {
         member: {
           select: {
             id: true,
-            joinDate: true
+            joinDate: true,
+            memberId: true
             // EXCLUDE: medicalNotes as per security rules
           }
         }
@@ -52,6 +53,7 @@ export const GET = withRole(['MEMBER'], async (req: NextRequest, user: any) => {
 
     return success({
       userId: userData.id,
+      memberId: userData.member.memberId,
       email: userData.email,
       phone: userData.phone,
       joinDate: userData.member.joinDate,

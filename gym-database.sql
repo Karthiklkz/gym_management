@@ -91,6 +91,10 @@ email VARCHAR(255) UNIQUE NOT NULL,
 phone VARCHAR(20) NOT NULL,
 subscription_plan_id UUID NOT NULL,
 status user_status_enum DEFAULT 'active',
+location TEXT,
+address TEXT,
+pincode VARCHAR(20),
+gst VARCHAR(50),
 created_at TIMESTAMPTZ DEFAULT now(),
 
 FOREIGN KEY (subscription_plan_id)
@@ -185,8 +189,10 @@ ON DELETE CASCADE
 CREATE TABLE members (
 id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
 user_id UUID UNIQUE NOT NULL,
+member_id VARCHAR(50) UNIQUE,
 join_date TIMESTAMPTZ DEFAULT now(),
 medical_notes TEXT,
+class_type VARCHAR(100),
 
 FOREIGN KEY (user_id)
 REFERENCES users(id)
@@ -409,3 +415,45 @@ CREATE TRIGGER update_users_timestamp
 BEFORE UPDATE ON users
 FOR EACH ROW
 EXECUTE PROCEDURE update_timestamp();
+
+-- =====================================================
+-- MEMBER ID TRIGGER
+-- =====================================================
+
+CREATE OR REPLACE FUNCTION generate_member_id()
+RETURNS TRIGGER AS $$
+DECLARE
+    gym_name VARCHAR;
+    gym_prefix VARCHAR;
+    next_num INTEGER;
+BEGIN
+    -- 1. Find the gym_id and then the gym's name via the user
+    SELECT g.name INTO gym_name
+    FROM users u
+    JOIN gyms g ON u.gym_id = g.id
+    WHERE u.id = NEW.user_id;
+    
+    -- If no gym or gym name is found, default to 'GYM'
+    IF gym_name IS NULL THEN
+        gym_prefix := 'GYM';
+    ELSE
+        -- First 3 characters, uppercase, stripped of non-alphanumeric, padded to 3 chars
+        gym_prefix := RPAD(UPPER(SUBSTRING(REGEXP_REPLACE(gym_name, '[^a-zA-Z0-9]', '', 'g') FROM 1 FOR 3)), 3, 'X');
+    END IF;
+    
+    -- 2. Find the next incremented number for this prefix
+    SELECT COALESCE(MAX(SUBSTRING(member_id FROM 4)::INTEGER), 0) + 1 INTO next_num
+    FROM members
+    WHERE member_id LIKE gym_prefix || '%';
+    
+    -- 3. Construct the member_id (e.g. FIT001, FIT002, etc.)
+    NEW.member_id := gym_prefix || LPAD(next_num::TEXT, 3, '0');
+    
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER trigger_generate_member_id
+BEFORE INSERT ON members
+FOR EACH ROW
+EXECUTE FUNCTION generate_member_id();
