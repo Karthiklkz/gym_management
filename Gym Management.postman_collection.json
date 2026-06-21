@@ -1,0 +1,243 @@
+{
+  "info": {
+    "_postman_id": "fc43f71d-e0f6-4ea4-a5fe-c3286ce15b8c",
+    "name": "Gym Management",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "52767334",
+    "_collection_link": "https://go.postman.co/collection/52767334-fc43f71d-e0f6-4ea4-a5fe-c3286ce15b8c?source=collection_link"
+  },
+  "item": [
+    {
+      "name": "Authentication",
+      "item": [
+        {
+          "name": "Sign-up",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"email\": \"tester@gym.com\",\r\n  \"password\": \"securepassword123\",\r\n  \"role\": \"GYM_ADMIN\",\r\n  \"firstName\": \"Gym\",\r\n  \"lastName\": \"Manager\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:3000/api/auth/signup",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3000",
+              "path": [
+                "api",
+                "auth",
+                "signup"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Login",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"email\": \"tester@gym.com\",\r\n    \"password\": \"securepassword123\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:3000/api/auth/login",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3000",
+              "path": [
+                "api",
+                "auth",
+                "login"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Classes & Equipment",
+      "item": [
+        {
+          "name": "Get Classes",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "http://localhost:3000/api/classes",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3000",
+              "path": [
+                "api",
+                "classes"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Equipment Inventory",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "http://localhost:3000/api/equipment",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3000",
+              "path": [
+                "api",
+                "equipment"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Attendance & Logging",
+      "item": [
+        {
+          "name": "Get Admin Attendance Overview",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "http://localhost:3000/api/dashboard/attendance?branchId=&startDate=&endDate=",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3000",
+              "path": [
+                "api",
+                "dashboard",
+                "attendance"
+              ],
+              "query": [
+                {
+                  "key": "branchId",
+                  "value": "",
+                  "description": "Optional branch UUID"
+                },
+                {
+                  "key": "startDate",
+                  "value": "",
+                  "description": "Optional date filter start (YYYY-MM-DD)"
+                },
+                {
+                  "key": "endDate",
+                  "value": "",
+                  "description": "Optional date filter end (YYYY-MM-DD)"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Member Self Check-In/Out Toggle",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "http://localhost:3000/api/member/attendance",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3000",
+              "path": [
+                "api",
+                "member",
+                "attendance"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Trainer Checkout Member",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "http://localhost:3000/api/trainer/attendance/:attendanceId",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3000",
+              "path": [
+                "api",
+                "trainer",
+                "attendance",
+                ":attendanceId"
+              ],
+              "variable": [
+                {
+                  "key": "attendanceId",
+                  "value": "ENTER_ATTENDANCE_UUID_HERE"
+                }
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    }
+  ]
+}

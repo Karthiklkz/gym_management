@@ -3,36 +3,65 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
+import { useRegisterMutation } from "@/utility/api/auth";
 
 export default function RegisterPage() {
 
   const router = useRouter();
 
   const [form, setForm] = useState({
-    gymName: "",
-    ownerName: "",
+    firstName: "",
+    lastName: "",
     email: "",
-    phone: "",
-    password: ""
+    password: "",
+    role: "GYM_ADMIN"
   });
+  
+  const [errorDisplay, setErrorDisplay] = useState("");
+  const registerMutation = useRegisterMutation();
 
-  const handleChange = (e:any) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setForm({
       ...form,
       [e.target.name]: e.target.value
     });
   };
 
-  const handleSubmit = async (e:any) => {
-
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    setErrorDisplay("");
 
-    console.log("Register Data", form);
+    const password = form.password;
+    if (password.length < 8) {
+      setErrorDisplay("Password must be at least 8 characters long.");
+      return;
+    }
+    if (!/[A-Z]/.test(password)) {
+      setErrorDisplay("Password must contain at least one uppercase letter.");
+      return;
+    }
+    if (!/[a-z]/.test(password)) {
+      setErrorDisplay("Password must contain at least one lowercase letter.");
+      return;
+    }
+    if (!/[0-9]/.test(password)) {
+      setErrorDisplay("Password must contain at least one number.");
+      return;
+    }
+    if (!/[^A-Za-z0-9]/.test(password)) {
+      setErrorDisplay("Password must contain at least one special character (e.g. @, #, $, etc.).");
+      return;
+    }
 
-    // future API
-    // await fetch("/api/register",{method:"POST",body:JSON.stringify(form)})
-
-    router.push("/login");
+    registerMutation.mutate(form, {
+      onSuccess: () => {
+        // Success! Redirect to login
+        router.push("/login");
+      },
+      onError: (err: any) => {
+        setErrorDisplay(err.message || "An error occurred during registration.");
+      }
+    });
   };
 
   return (
@@ -75,12 +104,19 @@ export default function RegisterPage() {
             Register your gym and start managing members
           </p>
 
+          {/* DISPLAY ERROR MESSAGE */}
+          {errorDisplay && (
+            <div className="bg-red-500/10 border border-red-500 text-red-500 p-3 rounded-lg mb-4 text-sm">
+              {errorDisplay}
+            </div>
+          )}
+
           <form onSubmit={handleSubmit} className="space-y-4">
 
             <input
               type="text"
-              name="gymName"
-              placeholder="Gym Name"
+              name="firstName"
+              placeholder="First Name"
               onChange={handleChange}
               className="w-full bg-[#0F172A] border border-slate-700 text-white p-3 rounded-lg focus:outline-none focus:border-[#22C55E]"
               required
@@ -88,8 +124,8 @@ export default function RegisterPage() {
 
             <input
               type="text"
-              name="ownerName"
-              placeholder="Owner Name"
+              name="lastName"
+              placeholder="Last Name"
               onChange={handleChange}
               className="w-full bg-[#0F172A] border border-slate-700 text-white p-3 rounded-lg focus:outline-none focus:border-[#22C55E]"
               required
@@ -105,15 +141,6 @@ export default function RegisterPage() {
             />
 
             <input
-              type="text"
-              name="phone"
-              placeholder="Phone"
-              onChange={handleChange}
-              className="w-full bg-[#0F172A] border border-slate-700 text-white p-3 rounded-lg focus:outline-none focus:border-[#22C55E]"
-              required
-            />
-
-            <input
               type="password"
               name="password"
               placeholder="Password"
@@ -122,11 +149,15 @@ export default function RegisterPage() {
               required
             />
 
+            {/* Hidden field or select for role depending on what's needed. For now it's default value state */}
+            <input type="hidden" name="role" value={form.role} />
+
             <button
               type="submit"
-              className="w-full bg-[#22C55E] text-black font-semibold p-3 rounded-lg hover:opacity-90 transition"
+              disabled={registerMutation.isPending}
+              className="w-full bg-[#22C55E] text-black font-semibold p-3 rounded-lg hover:opacity-90 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
             >
-              Register Gym
+              {registerMutation.isPending ? "Registering..." : "Register Gym"}
             </button>
 
           </form>
