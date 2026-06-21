@@ -34,7 +34,7 @@ export const createGymWithAdmin = async (data: CreateGymInput, creatorId: string
   }
 
   // Hash password
-  const passwordHash = await bcrypt.hash(adminPassword, 10);
+  const passwordHash = await bcrypt.hash(adminPassword, 12);
 
   // Run in transaction: Create Gym, Create Admin User, Create Admin Profile
   const result = await prisma.$transaction(async (tx: any) => {

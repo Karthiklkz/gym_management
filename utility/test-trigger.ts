@@ -5,7 +5,7 @@ async function main() {
   try {
     console.log('Inserting test user and member...');
     const email = `test-trigger-${Date.now()}@example.com`;
-    const passwordHash = await bcrypt.hash('password123', 10);
+    const passwordHash = await bcrypt.hash('password123', 12);
     
     // Find the gym 'Ganesh's Gym'
     const gym = await prisma.gym.findFirst({

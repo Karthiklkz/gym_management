@@ -19,7 +19,7 @@ export const signup = async (data: SignupInput) => {
   }
 
   // Hash password
-  const passwordHash = await bcrypt.hash(password, 10);
+  const passwordHash = await bcrypt.hash(password, 12);
 
   // Create user and associated profile in a transaction
   const user = await prisma.$transaction(async (tx) => {

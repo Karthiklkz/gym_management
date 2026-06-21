@@ -1,14 +1,24 @@
 import { NextRequest } from 'next/server';
 import prisma from '@/api/db/client';
 import bcrypt from 'bcryptjs';
-import { success, serverError } from '@/api/utils/response';
+import { success, serverError, sendError } from '@/api/utils/response';
 
-// GET: Temporary seeding endpoint to prepare default Super Admin account
 export async function GET(req: NextRequest) {
   try {
+    // Check if any SUPER_ADMIN already exists in the system to prevent unauthorized resetting
+    const existingSuperAdmin = await prisma.user.findFirst({
+      where: { role: 'SUPER_ADMIN' }
+    });
+
+    if (existingSuperAdmin) {
+      const error = new Error('Access denied: A Super Admin account already exists in the database.');
+      (error as any).status = 403;
+      throw error;
+    }
+
     const email = 'superadmin@peakpulse.com';
     const password = 'SuperAdmin@123';
-    const passwordHash = await bcrypt.hash(password, 10);
+    const passwordHash = await bcrypt.hash(password, 12);
 
     const superAdmin = await prisma.user.upsert({
       where: { email },
@@ -56,6 +66,7 @@ export async function GET(req: NextRequest) {
       } : null
     }, "Super Admin credentials initialized successfully!");
   } catch (error: any) {
-    return serverError(error);
+    const status = error.status || 500;
+    return sendError(error, status);
   }
 }

@@ -66,7 +66,7 @@ export const POST = withAuth(async (req: NextRequest, user: any) => {
       return sendError('Email is already taken', 400);
     }
 
-    const defaultPasswordHash = await bcrypt.hash('member123', 10);
+    const defaultPasswordHash = await bcrypt.hash('member123', 12);
 
     // Get gym's branch
     const branch = await prisma.branch.findFirst({ where: { gymId: targetGymId } });

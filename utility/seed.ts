@@ -25,7 +25,7 @@ async function main() {
   console.log('Database cleaned.');
 
   // Hash common password
-  const passwordHash = await bcrypt.hash('password123', 10);
+  const passwordHash = await bcrypt.hash('password123', 12);
 
   // 2. Create Subscription Plan
   const plan = await prisma.subscriptionPlan.create({

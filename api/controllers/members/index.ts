@@ -27,7 +27,7 @@ export const getMembers = async (gymId?: string) => {
 export const createMemberWithUser = async (data: any, gymId: string, creatorId: string) => {
   const { email, password, firstName, lastName, phone, medicalNotes } = data;
 
-  const passwordHash = await bcrypt.hash(password || 'Member@123', 10);
+  const passwordHash = await bcrypt.hash(password || 'Member@123', 12);
   
   return await prisma.$transaction(async (tx: any) => {
     // 1. Create User
